@@ -1,0 +1,1832 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brittany's Garden</title>
+  <style>
+    :root {
+      --bg: #f5f7f2;
+      --panel: #ffffff;
+      --panel-soft: #f8faf5;
+      --line: #e3e8df;
+      --line-strong: #ced8ca;
+      --ink: #12201b;
+      --muted: #65736d;
+      --green: #104c31;
+      --green-2: #2f7a4c;
+      --green-soft: #eef5ed;
+      --red: #b42c24;
+      --red-soft: #fff3f1;
+      --amber: #b46300;
+      --amber-soft: #fff6e7;
+      --radius: 8px;
+      --shadow: 0 16px 44px rgba(28, 39, 31, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(246, 248, 243, 0.96), #ffffff 32%, rgba(248, 250, 246, 0.98));
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 292px minmax(620px, 1fr) 392px;
+      max-width: 1440px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background: transparent;
+      box-shadow: 0 0 0 1px rgba(18, 32, 27, 0.04);
+    }
+
+    .sidebar,
+    .detail {
+      background: rgba(250, 252, 248, 0.92);
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 36px 21px 28px;
+      gap: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 6px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      background: #e7f0e5;
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.18rem;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    .nav {
+      display: grid;
+      gap: 4px;
+    }
+
+    .nav button {
+      border: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 12px 13px;
+      border-radius: var(--radius);
+      color: #43524b;
+      background: transparent;
+      font-weight: 670;
+      text-align: left;
+    }
+
+    .nav button.active {
+      color: var(--green);
+      background: var(--green-soft);
+      box-shadow: inset 3px 0 0 rgba(16, 76, 49, 0.18);
+    }
+
+    .weather-card,
+    .snapshot-card,
+    .settings-card,
+    .panel,
+    .detail-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .weather-card {
+      padding: 18px;
+      box-shadow: 0 18px 44px rgba(30, 42, 34, 0.055);
+    }
+
+    .eyebrow {
+      margin: 0 0 11px;
+      color: var(--green);
+      font-size: 0.76rem;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .weather-main {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .weather-main .btn {
+      display: none;
+    }
+
+    .sun-icon {
+      width: 44px;
+      height: 44px;
+      margin-top: 8px;
+      border: 7px solid #e0aa1d;
+      border-radius: 999px;
+      box-shadow:
+        0 -18px 0 -12px #e0aa1d,
+        0 18px 0 -12px #e0aa1d,
+        18px 0 0 -12px #e0aa1d,
+        -18px 0 0 -12px #e0aa1d,
+        13px 13px 0 -12px #e0aa1d,
+        -13px 13px 0 -12px #e0aa1d,
+        13px -13px 0 -12px #e0aa1d,
+        -13px -13px 0 -12px #e0aa1d;
+    }
+
+    .temp {
+      font-size: 2.65rem;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .weather-main p,
+    .weather-card p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .weather-facts {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+      font-size: 0.9rem;
+    }
+
+    .fact {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      color: var(--muted);
+    }
+
+    .fact strong {
+      color: var(--ink);
+      font-weight: 720;
+    }
+
+    .weather-note {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .weather-updated {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .weather-updated .btn {
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .snapshot-card,
+    .settings-card {
+      padding: 14px 16px;
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .snapshot-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .snapshot-row:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .snapshot-row strong {
+      color: var(--ink);
+    }
+
+    .sidebar-actions {
+      margin-top: auto;
+      display: grid;
+      gap: 16px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .sidebar-actions .btn {
+      justify-content: flex-start;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      color: #43524b;
+      background: transparent;
+      box-shadow: none;
+      text-align: left;
+      font-weight: 620;
+    }
+
+    .main {
+      min-width: 0;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 50px 44px 30px;
+      border-bottom: 0;
+    }
+
+    .date-line {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: clamp(2.15rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .topbar p {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    #topWeather {
+      display: none;
+    }
+
+    .content {
+      padding: 30px 44px 70px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .filter {
+      border: 0;
+      padding: 0 0 13px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 690;
+    }
+
+    .filter.active {
+      color: var(--green);
+      border-bottom: 3px solid var(--green);
+    }
+
+    .count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 24px;
+      height: 24px;
+      margin-left: 6px;
+      border-radius: 999px;
+      background: #edf3ec;
+      color: var(--green);
+      font-size: 0.8rem;
+      font-weight: 760;
+    }
+
+    .lane {
+      margin-top: 40px;
+    }
+
+    .lane:first-of-type {
+      margin-top: 0;
+    }
+
+    .lane-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 820;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .lane-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--green);
+      font-size: 1rem;
+      font-weight: 850;
+      letter-spacing: 0.02em;
+    }
+
+    .lane-title.need {
+      color: var(--red);
+    }
+
+    .lane-title.watch {
+      color: var(--amber);
+    }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: 34px 86px minmax(0, 1fr) 104px 18px;
+      gap: 18px;
+      align-items: center;
+      min-height: 96px;
+      padding: 17px 0;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      transition: background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .task-row::before {
+      content: "";
+      position: static;
+      grid-column: 1;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid #cbd5ca;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .task-row:hover {
+      background: rgba(248, 250, 245, 0.78);
+      box-shadow: 24px 0 0 rgba(248, 250, 245, 0.78), -24px 0 0 rgba(248, 250, 245, 0.78);
+    }
+
+    .task-main {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+      grid-column: 2 / 4;
+    }
+
+    .thumb {
+      width: 86px;
+      height: 66px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 0;
+      background: #eef2ea;
+      box-shadow: 0 10px 22px rgba(25, 35, 29, 0.08);
+    }
+
+    .thumb.small {
+      width: 72px;
+      height: 58px;
+    }
+
+    .task-row h3,
+    .plant-row h3,
+    .detail h2,
+    .detail-card h3,
+    .journal-row h3 {
+      margin: 0;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .task-row p,
+    .plant-row p,
+    .detail p,
+    .journal-row p,
+    .empty {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.38;
+    }
+
+    .tag {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 10px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      color: var(--green);
+      background: var(--green-soft);
+      font-size: 0.78rem;
+      font-weight: 760;
+    }
+
+    .tag.need {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .tag.watch {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .reason,
+    .last-watered {
+      color: var(--ink);
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .reason {
+      display: none;
+    }
+
+    .last-watered {
+      display: none;
+      color: var(--muted);
+    }
+
+    .reason span,
+    .last-watered span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+    }
+
+    .last-watered span {
+      display: inline;
+      margin: 0 0 0 6px;
+    }
+
+    .task-row .btn:not(.chevron) {
+      display: none;
+    }
+
+    .task-row .chevron {
+      grid-column: 5;
+      width: auto;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-weight: 800;
+    }
+
+    .due-label {
+      grid-column: 4;
+      color: var(--green);
+      font-weight: 720;
+      text-align: right;
+    }
+
+    .upcoming-link {
+      display: block;
+      width: fit-content;
+      margin: 22px auto 0;
+      border: 0;
+      background: transparent;
+      color: var(--green);
+      font-weight: 720;
+    }
+
+    .btn {
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      min-height: 40px;
+      padding: 9px 14px;
+      color: var(--green);
+      background: #ffffff;
+      font-weight: 720;
+    }
+
+    .btn.primary {
+      color: #ffffff;
+      background: var(--green);
+      box-shadow: var(--shadow);
+    }
+
+    .btn.secondary {
+      color: var(--green);
+      background: #ffffff;
+    }
+
+    .btn.ghost {
+      border-color: var(--line-strong);
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    .btn.danger {
+      border-color: #e5b8b1;
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .chevron {
+      color: var(--muted);
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .detail {
+      min-width: 0;
+      padding: 24px 22px;
+      overflow: auto;
+    }
+
+    .detail-photo {
+      width: 100%;
+      height: 242px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 0;
+      background: #eef2ea;
+      box-shadow: 0 18px 38px rgba(25, 35, 29, 0.12);
+    }
+
+    .detail-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .detail h2 {
+      font-size: 1.6rem;
+      letter-spacing: -0.025em;
+    }
+
+    .detail-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 22px 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-tabs button {
+      border: 0;
+      padding: 0 0 12px;
+      color: #3f4d47;
+      background: transparent;
+      text-align: left;
+      font-weight: 620;
+    }
+
+    .detail-tabs button.active {
+      color: var(--green);
+      box-shadow: inset 0 -2px 0 var(--green);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      color: var(--green);
+      background: var(--green-soft);
+      font-size: 0.82rem;
+      font-weight: 780;
+    }
+
+    .status.need {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .status.watch {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .edit-btn {
+      min-height: 34px;
+      padding: 6px 10px;
+      box-shadow: none;
+      font-size: 0.88rem;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 22px 0 12px;
+    }
+
+    .action-grid .btn {
+      min-height: 58px;
+      background: rgba(255, 255, 255, 0.78);
+      border-color: var(--line-strong);
+    }
+
+    .detail-card {
+      margin-top: 18px;
+      padding: 16px 0 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: transparent;
+    }
+
+    .schedule-row,
+    .activity-row,
+    .fact-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .schedule-row:first-of-type,
+    .activity-row:first-of-type,
+    .fact-row:first-of-type {
+      border-top: 0;
+    }
+
+    .schedule-row strong,
+    .activity-row strong,
+    .fact-row strong {
+      color: var(--ink);
+    }
+
+    .plant-list,
+    .journal-list {
+      display: grid;
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .plant-row,
+    .journal-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 0;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      text-align: left;
+      color: inherit;
+    }
+
+    .journal-row {
+      grid-template-columns: 88px minmax(0, 1fr) 130px;
+    }
+
+    .form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--ink);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 10px 11px;
+      background: #ffffff;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.12);
+    }
+
+    .quick-log {
+      margin-top: 38px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    #todayView .quick-log {
+      display: none;
+    }
+
+    .quick-log h3 {
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 17px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+    }
+
+    .panel ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 22, 18, 0.32);
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(680px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .empty {
+      padding: 18px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+    }
+
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      z-index: 30;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+    }
+
+    .mobile-nav button {
+      border: 0;
+      border-radius: 7px;
+      padding: 9px 4px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 0.82rem;
+      font-weight: 760;
+    }
+
+    .mobile-nav button.active {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 238px minmax(0, 1fr);
+      }
+
+      .detail {
+        display: none;
+      }
+
+      .lane-head,
+      .task-row {
+        grid-template-columns: 34px 86px minmax(0, 1fr) 104px 18px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app {
+        display: block;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        border-right: 0;
+      }
+
+      .topbar {
+        display: grid;
+        padding: 22px 16px 16px;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .content {
+        padding: 18px 16px 94px;
+      }
+
+      .filters {
+        gap: 18px;
+        overflow-x: auto;
+      }
+
+      .lane-head {
+        display: block;
+      }
+
+      .lane-head > span:not(.lane-title) {
+        display: none;
+      }
+
+      .task-row {
+        grid-template-columns: 86px minmax(0, 1fr) 24px;
+        gap: 13px;
+        align-items: start;
+        padding-left: 0;
+      }
+
+      .task-row::before {
+        display: none;
+      }
+
+      .task-main {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr);
+        grid-column: 1 / 3;
+        grid-row: auto;
+      }
+
+      .thumb {
+        width: 92px;
+        height: 82px;
+      }
+
+      .reason,
+      .last-watered,
+      .task-row .btn:not(.chevron),
+      .chevron {
+        grid-column: 2;
+        grid-row: auto;
+      }
+
+      .due-label {
+        grid-column: 2;
+        text-align: left;
+      }
+
+      .task-row .chevron {
+        grid-column: 3;
+        grid-row: 1;
+      }
+
+      .task-row .btn:not(.chevron),
+      .task-row .chevron {
+        width: fit-content;
+      }
+
+      .quick-log,
+      .guide-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .mobile-nav {
+        display: grid;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar h2 {
+        font-size: 2rem;
+      }
+
+      .task-row {
+        grid-template-columns: 72px minmax(0, 1fr) 24px;
+      }
+
+      .thumb {
+        width: 72px;
+        height: 64px;
+      }
+
+      .task-main {
+        grid-template-columns: 72px minmax(0, 1fr);
+      }
+
+      .plant-row,
+      .journal-row {
+        grid-template-columns: 72px minmax(0, 1fr);
+      }
+
+      .plant-row .btn,
+      .journal-row > span:last-child {
+        grid-column: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">B</div>
+        <div>
+          <h1>Brittany's Garden</h1>
+          <p>Planter care that remembers.</p>
+        </div>
+      </div>
+
+      <nav class="nav" id="desktopNav" aria-label="Main navigation"></nav>
+
+      <section class="weather-card">
+        <p class="eyebrow">Weather</p>
+        <div class="weather-main">
+          <div class="sun-icon" aria-hidden="true"></div>
+          <div>
+            <div class="temp" id="weatherTemp">82°F</div>
+            <p id="weatherSummary">Sunny</p>
+            <p>Feels like 84°</p>
+          </div>
+          <button class="btn ghost" id="refreshWeather" type="button">Use my weather</button>
+        </div>
+        <div class="weather-facts">
+          <div class="fact"><span>High / Low</span><strong id="highLow">91F / 68F</strong></div>
+        </div>
+        <p class="weather-note">Dry forecast for the next 7 days.<br />0% chance of rain</p>
+        <div class="weather-updated"><span>Updated 11:30 AM</span><button class="btn ghost" id="refreshWeatherMini" type="button" aria-label="Refresh weather">↻</button></div>
+        <div class="weather-facts visually-hidden">
+          <div class="fact"><span>Rain</span><strong id="rainAmount">0.00 in</strong></div>
+          <div class="fact"><span>Source</span><strong id="weatherSource">Demo</strong></div>
+        </div>
+      </section>
+
+      <section class="snapshot-card">
+        <p class="eyebrow">Garden Snapshot</p>
+        <div class="snapshot-row"><span>Total Planters</span><strong id="snapPlanters">0</strong></div>
+        <div class="snapshot-row"><span>Plants</span><strong id="snapPlants">0</strong></div>
+        <div class="snapshot-row"><span>Tasks today</span><strong id="snapTasks">0</strong></div>
+      </section>
+
+      <div class="sidebar-actions">
+        <button class="btn ghost" type="button" data-view="guide">Settings</button>
+        <button class="btn ghost" id="sideExport" type="button">Export Data</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="viewTitle">Today</h2>
+          <p id="viewSubtitle" class="date-line">Sunday, June 21</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn secondary" id="topWeather" type="button">Use my weather</button>
+            <button class="btn primary" id="topAddPlant" type="button">+ Add Planter</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <section class="view active" id="todayView">
+          <div class="filters" id="filters"></div>
+          <div id="careBoard"></div>
+
+          <section class="quick-log">
+            <h3>Quick Log</h3>
+            <div class="form">
+              <div class="split">
+                <div class="field">
+                  <label for="quickPlant">Plant</label>
+                  <select id="quickPlant"></select>
+                </div>
+                <div class="field">
+                  <label for="quickAction">Action</label>
+                  <select id="quickAction">
+                    <option value="Watered">Watered</option>
+                    <option value="Fed">Fed</option>
+                    <option value="Harvested">Harvested</option>
+                    <option value="Checked">Checked</option>
+                    <option value="Note">Note</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="quickNote">Note</label>
+                <textarea id="quickNote" placeholder="Example: Top inch was dry. Watered deeply."></textarea>
+              </div>
+              <button class="btn primary" id="saveQuickLog" type="button">Save log</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="plantersView">
+          <div class="plant-list" id="plantList"></div>
+        </section>
+
+        <section class="view" id="journalView">
+          <div class="journal-list" id="journalList"></div>
+        </section>
+
+        <section class="view" id="guideView">
+          <div class="guide-grid">
+            <article class="panel">
+              <h3>Weather Reasoning</h3>
+              <ul>
+                <li>Hot days move water checks earlier for containers.</li>
+                <li>Rain reduces urgency, but does not replace soil checks.</li>
+                <li>Every recommendation shows the reason behind it.</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>First-Year Rules</h3>
+              <ul>
+                <li>Check the top inch of soil before watering.</li>
+                <li>Water deeply instead of constantly.</li>
+                <li>Log what happened so next season is easier.</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>Prototype Data</h3>
+              <ul>
+                <li>Data saves in this browser.</li>
+                <li>Export creates a JSON backup.</li>
+                <li>Future version would sync privately with Firebase.</li>
+              </ul>
+            </article>
+          </div>
+
+          <section class="quick-log">
+            <h3>Settings</h3>
+            <div class="split">
+              <button class="btn ghost" id="exportData" type="button">Export JSON</button>
+              <button class="btn danger" id="resetData" type="button">Reset demo data</button>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <aside class="detail" id="detailPanel" aria-label="Selected plant details"></aside>
+  </div>
+
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation"></nav>
+
+  <div class="modal" id="plantModal" role="dialog" aria-modal="true" aria-labelledby="plantModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h3 id="plantModalTitle">Add planter</h3>
+          <p class="empty" style="margin-top:8px;">Adds a real saved planter to this browser version.</p>
+        </div>
+        <button class="btn ghost" id="closeModal" type="button">Close</button>
+      </div>
+
+      <form class="form" id="plantForm">
+        <div class="split">
+          <div class="field">
+            <label for="plantName">Plant name</label>
+            <input id="plantName" required placeholder="Cherry Tomato" />
+          </div>
+          <div class="field">
+            <label for="plantVariety">Variety</label>
+            <input id="plantVariety" placeholder="Sweet 100" />
+          </div>
+        </div>
+        <div class="split">
+          <div class="field">
+            <label for="plantContainer">Container</label>
+            <input id="plantContainer" placeholder="Back patio planter" />
+          </div>
+          <div class="field">
+            <label for="plantSun">Sun</label>
+            <select id="plantSun">
+              <option>Full sun</option>
+              <option>Morning sun</option>
+              <option>Part shade</option>
+              <option>Afternoon sun</option>
+            </select>
+          </div>
+        </div>
+        <div class="split">
+          <div class="field">
+            <label for="waterEvery">Water check cadence</label>
+            <select id="waterEvery">
+              <option value="1">Every day</option>
+              <option value="2" selected>Every 2 days</option>
+              <option value="3">Every 3 days</option>
+              <option value="4">Every 4 days</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="feedEvery">Feed cadence</label>
+            <select id="feedEvery">
+              <option value="14" selected>Every 14 days</option>
+              <option value="21">Every 21 days</option>
+              <option value="30">Every 30 days</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="plantNotes">Notes</label>
+          <textarea id="plantNotes" placeholder="What should Brittany remember about this plant?"></textarea>
+        </div>
+        <div class="field">
+          <label for="plantPhoto">Optional photo</label>
+          <input id="plantPhoto" type="file" accept="image/*" />
+        </div>
+        <button class="btn primary" type="submit">Save planter</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = "brittanys-garden-mockup-match-v1";
+    const asset = (file) => "assets/" + file;
+    const todayISO = () => new Date().toISOString().slice(0, 10);
+    const navItems = [
+      { id: "today", label: "Today", title: "Today", subtitle: "Sunday, June 21" },
+      { id: "planters", label: "Planters", title: "Planters", subtitle: "All active containers in one place." },
+      { id: "journal", label: "Journal", title: "Journal", subtitle: "A clean record of what happened." },
+      { id: "guide", label: "Guide", title: "Guide", subtitle: "Care logic, settings, and prototype data." }
+    ];
+
+    const seed = {
+      selectedPlantId: "tomato",
+      activeFilter: "all",
+      weather: {
+        source: "Demo",
+        temp: 82,
+        high: 85,
+        low: 63,
+        rain: 0,
+        code: 0,
+        summary: "Sunny"
+      },
+      plants: [
+        {
+          id: "tomato",
+          name: "Cherry Tomato",
+          variety: "Sweet 100",
+          container: "Tomato Planter",
+          sun: "Full sun",
+          status: "Healthy",
+          waterEvery: 2,
+          feedEvery: 14,
+          plantedDate: "2026-05-10",
+          lastWatered: offsetDate(-2),
+          lastFed: offsetDate(-11),
+          notes: "Top inch should be dry before watering. Watch for yellowing leaves.",
+          photo: asset("tomato.png")
+        },
+        {
+          id: "basil",
+          name: "Basil",
+          variety: "Genovese",
+          container: "Herb Planter",
+          sun: "Morning sun",
+          status: "Healthy",
+          waterEvery: 2,
+          feedEvery: 21,
+          plantedDate: "2026-05-12",
+          lastWatered: offsetDate(-1),
+          lastFed: offsetDate(-9),
+          notes: "Pinch flowers to keep leaves growing.",
+          photo: asset("basil.png")
+        },
+        {
+          id: "pepper",
+          name: "Bell Pepper",
+          variety: "California Wonder",
+          container: "Pepper Planter",
+          sun: "Full sun",
+          status: "Watch",
+          waterEvery: 3,
+          feedEvery: 14,
+          plantedDate: "2026-05-14",
+          lastWatered: offsetDate(-3),
+          lastFed: offsetDate(-13),
+          notes: "Moisture is a bit low. Keep watering steady once peppers set.",
+          photo: asset("pepper.png")
+        },
+        {
+          id: "lettuce",
+          name: "Lettuce",
+          variety: "Buttercrunch",
+          container: "Lettuce Planter",
+          sun: "Part shade",
+          status: "Harvest",
+          waterEvery: 2,
+          feedEvery: 21,
+          plantedDate: "2026-05-02",
+          lastWatered: offsetDate(-1),
+          lastFed: offsetDate(-20),
+          notes: "Take outer leaves and allow the center to regrow.",
+          photo: asset("lettuce.png")
+        }
+      ],
+      logs: [
+        { id: "log-1", plantId: "tomato", type: "Watered", date: offsetDate(-2), text: "Soil was dry about 1 inch down." },
+        { id: "log-2", plantId: "tomato", type: "Fed", date: offsetDate(-4), text: "Tomato-tone, 1 tbsp around base." },
+        { id: "log-3", plantId: "tomato", type: "Harvested", date: offsetDate(-7), text: "Picked 6 cherry tomatoes." },
+        { id: "log-4", plantId: "basil", type: "Checked", date: offsetDate(-1), text: "No flower buds yet." }
+      ]
+    };
+
+    let state = loadState();
+    let activeView = "today";
+
+    function offsetDate(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey)) || structuredClone(seed);
+      } catch {
+        return structuredClone(seed);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function plantById(id) {
+      return state.plants.find((plant) => plant.id === id) || state.plants[0];
+    }
+
+    function selectedPlant() {
+      return plantById(state.selectedPlantId);
+    }
+
+    function daysSince(dateString) {
+      return Math.max(0, Math.round((new Date(todayISO() + "T12:00:00") - new Date(dateString + "T12:00:00")) / 86400000));
+    }
+
+    function formatDate(dateString, options = { month: "short", day: "numeric" }) {
+      return new Date(dateString + "T12:00:00").toLocaleDateString("en-US", options);
+    }
+
+    function weatherSummary(code) {
+      if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return "Rain likely";
+      if ([95, 96, 99].includes(code)) return "Storm risk";
+      if ([1, 2, 3].includes(code)) return "Partly cloudy";
+      return "Sunny, dry forecast";
+    }
+
+    function taskData() {
+      const tomato = plantById("tomato");
+      const basil = plantById("basil");
+      const lettuce = plantById("lettuce");
+      const pepper = plantById("pepper");
+      return [
+        {
+          plantId: tomato.id,
+          action: "Watered",
+          lane: "due",
+          title: "Check Cherry Tomato soil",
+          description: "Tomato Planter",
+          dueLabel: "Due today",
+          tag: tomato.name
+        },
+        {
+          plantId: basil.id,
+          action: "Checked",
+          lane: "due",
+          title: "Check Basil flowers",
+          description: "Herb Planter",
+          dueLabel: "Due today",
+          tag: basil.name
+        },
+        {
+          plantId: lettuce.id,
+          action: "Harvested",
+          lane: "due",
+          title: "Harvest Lettuce outer leaves",
+          description: "Lettuce Planter",
+          dueLabel: "Due today",
+          tag: lettuce.name
+        },
+        {
+          plantId: pepper.id,
+          action: "Watered",
+          lane: "upcoming",
+          title: "Check Pepper soil",
+          description: "Pepper Planter",
+          dueLabel: "Tomorrow",
+          tag: pepper.name
+        },
+        {
+          plantId: basil.id,
+          action: "Fed",
+          lane: "upcoming",
+          title: "Feed Basil",
+          description: "Herb Planter",
+          dueLabel: "In 5 days",
+          tag: basil.name
+        }
+      ];
+    }
+
+    function filteredTasks() {
+      const tasks = taskData();
+      if (state.activeFilter === "all") return tasks;
+      return tasks.filter((task) => task.action.toLowerCase() === state.activeFilter);
+    }
+
+    function addLog(plantId, type, text) {
+      const plant = plantById(plantId);
+      if (!plant) return;
+
+      state.logs.unshift({
+        id: "log-" + Date.now(),
+        plantId,
+        type,
+        date: todayISO(),
+        text: text?.trim() || defaultLogText(plant, type)
+      });
+
+      if (type === "Watered") plant.lastWatered = todayISO();
+      if (type === "Fed") plant.lastFed = todayISO();
+      if (type === "Harvested") plant.status = "Harvested";
+      state.selectedPlantId = plantId;
+      saveState();
+      render();
+    }
+
+    function defaultLogText(plant, type) {
+      const map = {
+        Watered: `Watered ${plant.name} after checking soil.`,
+        Fed: `Fed ${plant.name} on schedule.`,
+        Harvested: `Harvested from ${plant.name}.`,
+        Checked: `Checked ${plant.name}.`,
+        Note: `Added a note for ${plant.name}.`
+      };
+      return map[type] || `Logged ${type} for ${plant.name}.`;
+    }
+
+    function setView(id) {
+      activeView = id;
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === id + "View"));
+      document.querySelectorAll("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === id));
+      const item = navItems.find((nav) => nav.id === id);
+      document.getElementById("viewTitle").textContent = item.title;
+      document.getElementById("viewSubtitle").textContent = item.subtitle;
+    }
+
+    function renderNav() {
+      const html = navItems.map((item) => `<button type="button" data-view="${item.id}" class="${activeView === item.id ? "active" : ""}">${item.label}</button>`).join("");
+      document.getElementById("desktopNav").innerHTML = html;
+      document.getElementById("mobileNav").innerHTML = html;
+    }
+
+    function renderFilters() {
+      const tasks = taskData();
+      const counts = {
+        all: tasks.filter((task) => task.lane === "due").length,
+        watered: tasks.filter((task) => task.action === "Watered").length,
+        fed: tasks.filter((task) => task.action === "Fed").length,
+        harvested: tasks.filter((task) => task.action === "Harvested").length
+      };
+      const filters = [
+        ["all", "All Tasks"],
+        ["watered", "Water"],
+        ["fed", "Feed"],
+        ["harvested", "Harvest"]
+      ];
+      document.getElementById("filters").innerHTML = filters.map(([id, label]) => `
+        <button class="filter ${state.activeFilter === id ? "active" : ""}" type="button" data-filter="${id}">
+          ${label}<span class="count">${counts[id]}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderCareBoard() {
+      const board = document.getElementById("careBoard");
+      const tasks = filteredTasks();
+      const lanes = [
+        { id: "due", title: "Due Today", className: "", tasks: tasks.filter((task) => task.lane === "due") },
+        { id: "upcoming", title: "Upcoming", className: "", tasks: tasks.filter((task) => task.lane === "upcoming") }
+      ];
+      const laneHtml = lanes
+        .filter((lane) => lane.tasks.length)
+        .map((lane) => `
+          <section class="lane">
+            <div class="lane-head">
+              <span class="lane-title ${lane.className}">${lane.title}<span class="count">${lane.tasks.length}</span></span>
+            </div>
+            ${lane.tasks.map(renderTask).join("")}
+          </section>
+        `).join("");
+      board.innerHTML = laneHtml ? laneHtml + `<button class="upcoming-link" type="button" data-view="planters">View all tasks</button>` : `<div class="empty">Nothing matches this filter.</div>`;
+    }
+
+    function renderTask(task) {
+      const plant = plantById(task.plantId);
+      return `
+        <article class="task-row">
+          <div class="task-main">
+            <img class="thumb" src="${plant.photo}" alt="${plant.name}" />
+            <div>
+              <h3>${task.title}</h3>
+              <p>${task.description}</p>
+            </div>
+          </div>
+          <div class="due-label">${task.dueLabel}</div>
+          <button class="btn secondary" data-log-task="${task.plantId}" data-log-type="${task.action}" type="button">Log</button>
+          <button class="btn ghost chevron" data-select-plant="${task.plantId}" type="button" aria-label="Open ${plant.name}">›</button>
+        </article>
+      `;
+    }
+
+    function renderPlants() {
+      document.getElementById("plantList").innerHTML = state.plants.map((plant) => `
+        <button class="plant-row" type="button" data-select-plant="${plant.id}">
+          <img class="thumb small" src="${plant.photo}" alt="${plant.name}" />
+          <span>
+            <h3>${plant.name}</h3>
+            <p>${plant.container} · ${plant.variety || "Vegetable"}</p>
+            <span class="tag ${plant.status === "Watch" || plant.status === "Harvest" ? "watch" : ""}">${plant.status}</span>
+          </span>
+          <span class="btn ghost">Open</span>
+        </button>
+      `).join("");
+    }
+
+    function renderJournal() {
+      document.getElementById("journalList").innerHTML = state.logs.map((log) => {
+        const plant = plantById(log.plantId);
+        return `
+          <article class="journal-row">
+            <img class="thumb small" src="${plant.photo}" alt="${plant.name}" />
+            <span>
+              <h3>${plant.name} · ${log.type}</h3>
+              <p>${log.text}</p>
+            </span>
+            <span>${formatDate(log.date)}</span>
+          </article>
+        `;
+      }).join("") || `<div class="empty">No journal entries yet.</div>`;
+    }
+
+    function renderDetail() {
+      const plant = selectedPlant();
+      const plantLogs = state.logs.filter((log) => log.plantId === plant.id).slice(0, 3);
+      document.getElementById("detailPanel").innerHTML = `
+        <img class="detail-photo" src="${plant.photo}" alt="${plant.name}" />
+        <div class="detail-head">
+          <div>
+            <h2>${plant.name}</h2>
+            <p>${plant.container} · ${plant.variety || "Vegetable"}</p>
+          </div>
+          <button class="btn ghost edit-btn" id="editSelectedPlant" type="button">Edit</button>
+        </div>
+        <div class="detail-tabs" role="tablist" aria-label="Plant detail tabs">
+          <button class="active" type="button">Overview</button>
+          <button type="button">Care</button>
+          <button type="button">History</button>
+          <button type="button">Notes</button>
+        </div>
+        <div class="action-grid">
+          <button class="btn secondary" data-log-task="${plant.id}" data-log-type="Watered" type="button">Watered</button>
+          <button class="btn secondary" data-log-task="${plant.id}" data-log-type="Fed" type="button">Fed</button>
+          <button class="btn secondary" data-log-task="${plant.id}" data-log-type="Harvested" type="button">Harvest</button>
+        </div>
+        <section class="detail-card">
+          <h3>Care Schedule</h3>
+          <div class="schedule-row"><span>Water check</span><strong>Every ${plant.waterEvery} days</strong></div>
+          <div class="schedule-row"><span>Feed</span><strong>Every ${plant.feedEvery} days</strong></div>
+          <div class="schedule-row"><span>Prune</span><strong>As needed</strong></div>
+        </section>
+        <section class="detail-card">
+          <h3>Plant Details</h3>
+          <div class="fact-row"><span>Variety</span><strong>${plant.variety || "Vegetable"}</strong></div>
+          <div class="fact-row"><span>Planted</span><strong>${formatDate(plant.plantedDate, { month: "short", day: "numeric", year: "numeric" })}</strong></div>
+          <div class="fact-row"><span>Days in soil</span><strong>${daysSince(plant.plantedDate)} days</strong></div>
+          <div class="fact-row"><span>Sun</span><strong>${plant.sun}</strong></div>
+          <div class="fact-row"><span>Spacing</span><strong>12 in</strong></div>
+        </section>
+      `;
+    }
+
+    function renderQuickLog() {
+      const select = document.getElementById("quickPlant");
+      select.innerHTML = state.plants.map((plant) => `<option value="${plant.id}">${plant.name}</option>`).join("");
+      select.value = state.selectedPlantId;
+    }
+
+    function renderWeather() {
+      document.getElementById("weatherTemp").textContent = `${Math.round(state.weather.temp)}°F`;
+      document.getElementById("weatherSummary").textContent = state.weather.summary;
+      document.getElementById("highLow").textContent = `${Math.round(state.weather.high)}° / ${Math.round(state.weather.low)}°`;
+      document.getElementById("rainAmount").textContent = `${Number(state.weather.rain).toFixed(2)} in`;
+      document.getElementById("weatherSource").textContent = state.weather.source;
+    }
+
+    function renderSnapshot() {
+      document.getElementById("snapPlanters").textContent = state.plants.length;
+      document.getElementById("snapPlants").textContent = 10;
+      document.getElementById("snapTasks").textContent = taskData().filter((task) => task.lane === "due").length;
+    }
+
+    function render() {
+      renderNav();
+      renderFilters();
+      renderCareBoard();
+      renderPlants();
+      renderJournal();
+      renderDetail();
+      renderQuickLog();
+      renderWeather();
+      renderSnapshot();
+      setView(activeView);
+    }
+
+    async function photoToDataUrl(file) {
+      if (!file) return null;
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function fetchLiveWeather() {
+      if (!navigator.geolocation) {
+        alert("This browser does not support location weather.");
+        return;
+      }
+      document.querySelectorAll("#refreshWeather,#refreshWeatherMini,#topWeather").forEach((button) => button.textContent = "Getting weather...");
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_days=1&timezone=auto`;
+          const response = await fetch(url);
+          const data = await response.json();
+          state.weather = {
+            source: "Live",
+            temp: data.current.temperature_2m,
+            high: data.daily.temperature_2m_max[0],
+            low: data.daily.temperature_2m_min[0],
+            rain: data.daily.precipitation_sum[0],
+            code: data.current.weather_code,
+            summary: weatherSummary(data.current.weather_code)
+          };
+          saveState();
+          render();
+        } catch {
+          alert("Weather lookup failed. Demo weather is still available.");
+        } finally {
+          document.querySelectorAll("#refreshWeather,#topWeather").forEach((button) => button.textContent = "Use my weather");
+          document.getElementById("refreshWeatherMini").textContent = "↻";
+        }
+      }, () => {
+        document.querySelectorAll("#refreshWeather,#topWeather").forEach((button) => button.textContent = "Use my weather");
+        document.getElementById("refreshWeatherMini").textContent = "↻";
+        alert("Location permission was not granted. Demo weather remains active.");
+      });
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "brittanys-garden-backup.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener("click", (event) => {
+      const view = event.target.closest("[data-view]");
+      if (view) setView(view.dataset.view);
+
+      const filter = event.target.closest("[data-filter]");
+      if (filter) {
+        state.activeFilter = filter.dataset.filter;
+        saveState();
+        render();
+      }
+
+      const selectPlant = event.target.closest("[data-select-plant]");
+      if (selectPlant) {
+        state.selectedPlantId = selectPlant.dataset.selectPlant;
+        saveState();
+        render();
+      }
+
+      const logTask = event.target.closest("[data-log-task]");
+      if (logTask) addLog(logTask.dataset.logTask, logTask.dataset.logType, "");
+    });
+
+    document.getElementById("saveQuickLog").addEventListener("click", () => {
+      addLog(document.getElementById("quickPlant").value, document.getElementById("quickAction").value, document.getElementById("quickNote").value);
+      document.getElementById("quickNote").value = "";
+    });
+
+    document.getElementById("quickPlant").addEventListener("change", (event) => {
+      state.selectedPlantId = event.target.value;
+      saveState();
+      render();
+    });
+
+    document.querySelectorAll("#sideAddPlant,#topAddPlant").forEach((button) => {
+      button.addEventListener("click", () => document.getElementById("plantModal").classList.add("open"));
+    });
+
+    document.getElementById("closeModal").addEventListener("click", () => document.getElementById("plantModal").classList.remove("open"));
+      document.querySelectorAll("#refreshWeather,#refreshWeatherMini,#topWeather").forEach((button) => button.addEventListener("click", fetchLiveWeather));
+    document.querySelectorAll("#sideExport,#exportData").forEach((button) => button.addEventListener("click", exportData));
+
+    document.getElementById("resetData").addEventListener("click", () => {
+      if (!confirm("Reset Brittany's Garden demo data?")) return;
+      state = structuredClone(seed);
+      saveState();
+      activeView = "today";
+      render();
+    });
+
+    document.getElementById("plantForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const file = document.getElementById("plantPhoto").files[0];
+      const photo = await photoToDataUrl(file);
+      const id = "plant-" + Date.now();
+      state.plants.push({
+        id,
+        name: document.getElementById("plantName").value.trim(),
+        variety: document.getElementById("plantVariety").value.trim(),
+        container: document.getElementById("plantContainer").value.trim(),
+        sun: document.getElementById("plantSun").value,
+        status: "Healthy",
+        waterEvery: Number(document.getElementById("waterEvery").value),
+        feedEvery: Number(document.getElementById("feedEvery").value),
+        plantedDate: todayISO(),
+        lastWatered: todayISO(),
+        lastFed: todayISO(),
+        notes: document.getElementById("plantNotes").value.trim(),
+        photo: photo || asset("basil.png")
+      });
+      state.logs.unshift({ id: "log-" + Date.now(), plantId: id, type: "Planted", date: todayISO(), text: "Added this planter to Brittany's Garden." });
+      state.selectedPlantId = id;
+      saveState();
+      event.target.reset();
+      document.getElementById("plantModal").classList.remove("open");
+      activeView = "planters";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Local tool state
+.playwright-mcp/
+.claude/settings.local.json
+
+# Browser profiles and caches
+work/chrome-debug-profile*/
+**/Cache/
+**/Code Cache/
+**/GPUCache/
+**/ShaderCache/
+**/GrShaderCache/
+**/Crashpad/
+**/Login Data*
+**/Cookies*
+**/History*
+**/Web Data*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+

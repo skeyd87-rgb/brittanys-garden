@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brittany's Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #f3efe6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes sunspin { to { transform: rotate(360deg); } }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+@keyframes popin {
+  0%{transform:translate(-50%,24px) scale(.85);opacity:0}
+  55%{transform:translate(-50%,-6px) scale(1.04);opacity:1}
+  100%{transform:translate(-50%,0) scale(1);opacity:1}
+}
+@keyframes floatUp {
+  0%{transform:translateY(0) scale(.6);opacity:0}
+  25%{opacity:1}
+  100%{transform:translateY(-70px) scale(1.1);opacity:0}
+}
+
+/* ── Layout ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Rail ── */
+.rail {
+  width: 236px;
+  flex: none;
+  background: #fffdf7;
+  border-right: 1px solid #ece4d3;
+  padding: 26px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.brand-tile {
+  width: 42px; height: 42px;
+  background: #6a8d5b;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex: none;
+}
+.brand-name {
+  font-family: 'Baloo 2', cursive;
+  font-weight: 800; font-size: 16px;
+  color: #33442f; line-height: 1.15;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 11px 14px; border-radius: 14px;
+  cursor: pointer; font-size: 15px; font-weight: 800;
+  color: #8a8270; border: none; background: transparent;
+  width: 100%; text-align: left; transition: all 0.15s;
+  position: relative;
+}
+.nav-item:hover { background: #f3efe6; color: #5e6a52; }
+.nav-item.active { background: #e7efdd; color: #3f6b4a; }
+.nav-icon { font-size: 19px; }
+.nav-badge {
+  margin-left: auto;
+  background: #c98a5e; color: #fff;
+  font-size: 11px; font-weight: 800;
+  border-radius: 20px; padding: 2px 8px;
+  min-width: 22px; text-align: center;
+}
+.streak-card {
+  margin-top: auto;
+  background: #eef2e6;
+  border-radius: 16px; padding: 16px; text-align: center;
+}
+.streak-emoji { font-size: 28px; animation: bob 4s ease-in-out infinite; display: block; }
+.streak-title { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 14px; color: #33442f; margin-top: 6px; }
+.streak-sub { font-size: 12px; color: #5e6a52; font-weight: 600; margin-top: 2px; }
+
+/* ── Main ── */
+.main { flex: 1; overflow-y: auto; padding: 34px 40px; }
+.content-col { max-width: 900px; margin: 0 auto; }
+.screen { display: none; }
+.screen.active { display: block; }
+.section-label {
+  font-size: 13px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; color: #a59a82;
+}
+.screen-title {
+  font-family: 'Baloo 2', cursive;
+  font-weight: 800; font-size: 30px; color: #33442f;
+}
+
+/* ── Today ── */
+.hero-panel {
+  background: linear-gradient(135deg, #e7efdd, #f3efe6 70%);
+  border-radius: 26px; border: 1px solid #e2ddca;
+  padding: 30px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  margin-bottom: 28px;
+}
+.hero-greeting { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 34px; color: #33442f; line-height: 1.1; }
+.hero-sub { font-size: 16px; color: #5e6a52; font-weight: 600; margin-top: 6px; max-width: 420px; line-height: 1.45; }
+.weather-card {
+  background: #fffdf7; border-radius: 20px;
+  padding: 16px 22px; display: flex; align-items: center; gap: 14px; flex: none;
+}
+.sun-wrap { position: relative; width: 42px; height: 42px; flex: none; }
+.sun-core { position: absolute; inset: 9px; border-radius: 50%; background: #e3b34d; box-shadow: 0 0 0 4px #f6ecc4; }
+.sun-rays {
+  position: absolute; inset: 0;
+  animation: sunspin 16s linear infinite;
+  background: repeating-conic-gradient(#e3b34d 0deg 8deg, transparent 8deg 45deg);
+  -webkit-mask: radial-gradient(circle, transparent 14px, #000 15px);
+  mask: radial-gradient(circle, transparent 14px, #000 15px);
+}
+.weather-temp { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 26px; color: #33442f; }
+.weather-desc { font-size: 12px; color: #8a8270; font-weight: 600; margin-top: 1px; }
+.today-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.today-count { font-size: 14px; font-weight: 800; color: #6a8d5b; }
+.task-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.task-card { background: #fffdf7; border-radius: 22px; padding: 18px; box-shadow: 0 2px 8px rgba(60,50,30,.05); }
+.task-card-header { display: flex; gap: 14px; align-items: center; }
+.plant-avatar {
+  width: 64px; height: 64px; border-radius: 18px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.15s; overflow: hidden;
+}
+.plant-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.plant-avatar.placeholder {
+  background: repeating-linear-gradient(45deg, #e3dcc7 0 8px, #ece5d2 8px 16px);
+  font-size: 26px;
+}
+.plant-avatar:hover { transform: scale(1.05); }
+.task-name { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 19px; color: #33442f; line-height: 1.2; }
+.status-pill { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 20px; padding: 3px 10px; margin-top: 4px; }
+.pill-thirsty { color: #b06a3e; background: #f6ddc9; }
+.pill-trim { color: #6a8d5b; background: #e7efdd; }
+.pill-harvest { color: #9a7d2e; background: #f6ecc4; }
+.pill-happy { color: #4d7040; background: #e7efdd; }
+.task-msg { font-size: 14px; color: #5e6a52; font-weight: 600; margin-top: 12px; line-height: 1.45; }
+.task-btn {
+  margin-top: 14px; width: 100%; border: none; border-radius: 14px; padding: 11px;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 7px; transition: all 0.15s;
+}
+.task-btn-primary { background: #6a8d5b; color: #fff; box-shadow: 0 3px 8px rgba(106,141,91,.25); }
+.task-btn-primary:hover { background: #5d7c4f; }
+.task-btn-outline { background: #fffdf7; color: #33442f; border: 1.5px solid #d8cfb8; }
+.task-btn-outline:hover { background: #f3efe6; }
+.task-done { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8px 0; min-height: 140px; }
+.task-done-emoji { font-size: 36px; }
+.task-done-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 18px; color: #4d7040; margin-top: 8px; }
+.task-done-sub { font-size: 13px; color: #5e6a52; font-weight: 600; margin-top: 4px; }
+.happy-card {
+  background: #eef2e6; border-radius: 22px; padding: 18px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; min-height: 160px;
+}
+.happy-emoji { font-size: 30px; animation: bob 4s ease-in-out infinite; }
+.happy-title { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 17px; color: #33442f; margin-top: 8px; }
+.happy-sub { font-size: 13px; color: #5e6a52; font-weight: 600; margin-top: 4px; line-height: 1.4; }
+
+/* ── Board ── */
+.board-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; margin-top: 24px; }
+.board-col { border-radius: 20px; padding: 18px; }
+.board-col-thirsty { background: #f9eee2; border: 1px solid #f0ddc8; }
+.board-col-love { background: #eef2e6; border: 1px solid #dde8d2; }
+.board-col-happy { background: #e9f0e2; border: 1px solid #dde8d2; }
+.board-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.board-col-title { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 16px; color: #33442f; }
+.board-col-count { background: #fffdf7; border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 800; color: #6b6555; }
+.plant-chip {
+  background: #fffdf7; border-radius: 14px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+}
+.plant-chip:hover { box-shadow: 0 4px 14px rgba(60,50,30,.10); transform: translateY(-1px); }
+.chip-avatar {
+  width: 46px; height: 46px; border-radius: 12px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.chip-avatar.placeholder { background: repeating-linear-gradient(45deg, #e3dcc7 0 6px, #ece5d2 6px 12px); font-size: 20px; }
+.chip-name { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 15.5px; color: #33442f; }
+.chip-note { font-size: 12px; font-weight: 600; color: #6b6555; margin-top: 2px; }
+
+/* ── Planters ── */
+.planters-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+.planters-sub { font-size: 15px; font-weight: 600; color: #6b6555; margin-top: 4px; }
+.add-btn {
+  background: #fffdf7; color: #33442f; border: 1.5px solid #d8cfb8;
+  border-radius: 14px; padding: 10px 18px;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+}
+.add-btn:hover { background: #f3efe6; }
+.roster-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.roster-card {
+  background: #fffdf7; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(60,50,30,.05);
+  cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+}
+.roster-card:hover { box-shadow: 0 4px 14px rgba(60,50,30,.10); transform: translateY(-2px); }
+.roster-photo {
+  height: 130px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; position: relative; overflow: hidden;
+}
+.roster-photo img { width: 100%; height: 100%; object-fit: cover; }
+.roster-photo.placeholder { background: repeating-linear-gradient(45deg, #e3dcc7 0 10px, #ece5d2 10px 20px); }
+.roster-photo-emoji { position: absolute; font-size: 40px; }
+.roster-status-pill {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 11px; font-weight: 800; border-radius: 20px; padding: 3px 10px;
+}
+.roster-body { padding: 16px; }
+.roster-name-row { display: flex; align-items: center; justify-content: space-between; }
+.roster-name { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 20px; color: #33442f; }
+.roster-mood { font-size: 22px; animation: bob 4s ease-in-out infinite; }
+.roster-meta { font-size: 13px; font-weight: 600; color: #8a8270; margin-top: 3px; }
+.roster-note { font-size: 13px; font-weight: 600; color: #5e6a52; margin-top: 8px; line-height: 1.4; }
+
+/* ── Detail ── */
+.back-link {
+  font-size: 14px; font-weight: 800; color: #6a8d5b;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px;
+}
+.back-link:hover { color: #4d7040; }
+.detail-container { background: #fffdf7; border-radius: 26px; box-shadow: 0 4px 14px rgba(60,50,30,.08); overflow: hidden; }
+.detail-hero {
+  height: 230px; position: relative;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.detail-hero img { width: 100%; height: 100%; object-fit: cover; }
+.detail-hero.placeholder { background: repeating-linear-gradient(45deg, #e3dcc7 0 11px, #ece5d2 11px 22px); }
+.detail-hero-label { font-size: 12px; color: #a59a82; background: rgba(243,239,230,0.85); padding: 6px 12px; border-radius: 20px; font-weight: 600; position: absolute; }
+.detail-body { padding: 0 24px 28px; margin-top: -46px; position: relative; }
+.detail-identity { background: #fffdf7; border-radius: 22px; padding: 22px; box-shadow: 0 4px 14px rgba(60,50,30,.08); }
+.detail-name { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 32px; color: #33442f; line-height: 1; }
+.detail-meta-text { font-size: 14px; font-weight: 600; color: #8a8270; margin-top: 4px; }
+.mood-badge { display: flex; align-items: center; gap: 8px; background: #e7efdd; border-radius: 20px; padding: 8px 14px; flex: none; }
+.mood-badge-emoji { font-size: 22px; animation: bob 4s ease-in-out infinite; }
+.mood-badge-text { font-size: 13px; font-weight: 800; color: #6a8d5b; }
+.detail-blurb { font-size: 15px; color: #5e6a52; font-weight: 600; margin-top: 14px; line-height: 1.5; font-style: italic; }
+.vitals-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+.vital-tile { background: #fffdf7; border-radius: 18px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(60,50,30,.05); }
+.vital-emoji { font-size: 24px; }
+.vital-value { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 17px; color: #33442f; margin-top: 4px; }
+.vital-label { font-size: 12px; color: #8a8270; font-weight: 600; }
+.log-buttons { display: flex; gap: 10px; margin-top: 16px; }
+.story-section { margin-top: 22px; }
+.story-row { background: #fffdf7; border-radius: 16px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.story-row-emoji { font-size: 22px; }
+.story-bold { font-size: 14px; font-weight: 800; color: #33442f; }
+.story-sub { font-size: 12px; color: #8a8270; font-weight: 600; margin-top: 2px; }
+.story-add-btn {
+  margin-top: 12px; width: 100%; border: 1.5px dashed #d8cfb8; background: transparent;
+  border-radius: 14px; padding: 12px; font: 700 14px 'Nunito', sans-serif; color: #6b6555; cursor: pointer;
+}
+.story-add-btn:hover { background: #f3efe6; }
+
+/* ── Journal ── */
+.journal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0 28px; }
+.stat-tile { border-radius: 20px; padding: 20px; text-align: center; }
+.stat-tile-mint { background: #e7efdd; }
+.stat-tile-peach { background: #f6e3d3; }
+.stat-tile-butter { background: #f6ecc4; }
+.stat-number { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 36px; color: #33442f; line-height: 1; }
+.stat-label { font-size: 13px; font-weight: 700; color: #5e6a52; margin-top: 6px; }
+.timeline { position: relative; padding-left: 28px; }
+.timeline-rail { position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: #e0d8c3; }
+.timeline-entry { position: relative; margin-bottom: 14px; }
+.timeline-dot { position: absolute; left: -28px; top: 18px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #f3efe6; }
+.timeline-card { background: #fffdf7; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(60,50,30,.05); }
+.timeline-emoji { font-size: 22px; }
+.timeline-text { flex: 1; }
+.timeline-bold { font-size: 14px; font-weight: 800; color: #33442f; }
+.timeline-sub { font-size: 12px; font-weight: 600; color: #8a8270; margin-top: 2px; }
+
+/* ── Setup ── */
+.setup-card { background: #fffdf7; border-radius: 22px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(60,50,30,.05); margin-bottom: 18px; }
+.setup-card-title { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 18px; color: #33442f; margin-bottom: 16px; }
+.setup-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0e9d8; }
+.setup-row:last-child { border-bottom: none; }
+.setup-label { font-size: 14px; font-weight: 700; color: #5e6a52; }
+.setup-value { font-size: 14px; font-weight: 600; color: #33442f; }
+.toggle { width: 48px; height: 26px; border-radius: 13px; background: #d8cfb8; border: none; cursor: pointer; position: relative; transition: background 0.18s; flex: none; }
+.toggle.on { background: #6a8d5b; }
+.toggle-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.18s; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.toggle.on .toggle-knob { transform: translateX(22px); }
+.temp-toggle { display: flex; background: #f3efe6; border-radius: 10px; padding: 3px; }
+.temp-opt { padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 800; color: #8a8270; cursor: pointer; border: none; background: transparent; font-family: 'Nunito', sans-serif; }
+.temp-opt.active { background: #6a8d5b; color: #fff; }
+.offline-panel { background: #eef2e6; border-radius: 18px; padding: 20px 22px; display: flex; gap: 16px; align-items: flex-start; }
+.offline-icon { font-size: 26px; flex: none; }
+.offline-title { font-size: 15px; font-weight: 800; color: #33442f; }
+.offline-sub { font-size: 13px; font-weight: 600; color: #5e6a52; margin-top: 4px; line-height: 1.45; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 32px; left: 50%;
+  background: #33442f; color: #fff; border-radius: 20px;
+  padding: 18px 28px; text-align: center;
+  box-shadow: 0 10px 30px rgba(40,55,35,.35);
+  min-width: 260px; z-index: 1000; pointer-events: none;
+  animation: popin 0.5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.toast-emoji { font-size: 32px; display: block; }
+.toast-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 17px; margin-top: 6px; }
+.toast-sub { font-size: 13px; font-weight: 600; color: #cdd6c2; margin-top: 3px; }
+.sparkle { position: fixed; font-size: 20px; pointer-events: none; z-index: 999; animation: floatUp 1s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- RAIL -->
+  <nav class="rail">
+    <div class="brand">
+      <div class="brand-tile">🌿</div>
+      <div class="brand-name">Brittany's<br>Garden</div>
+    </div>
+    <button class="nav-item active" data-screen="today">
+      <span class="nav-icon">🏡</span> Today
+      <span class="nav-badge" id="badge">3</span>
+    </button>
+    <button class="nav-item" data-screen="board">
+      <span class="nav-icon">🗂️</span> Care Board
+    </button>
+    <button class="nav-item" data-screen="planters">
+      <span class="nav-icon">🪴</span> Planters
+    </button>
+    <button class="nav-item" data-screen="journal">
+      <span class="nav-icon">📖</span> Journal
+    </button>
+    <button class="nav-item" data-screen="settings">
+      <span class="nav-icon">⚙️</span> Setup
+    </button>
+    <div class="streak-card">
+      <span class="streak-emoji">🌻</span>
+      <div class="streak-title">12-day streak!</div>
+      <div class="streak-sub">Your plants adore you.</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="content-col">
+
+      <!-- TODAY -->
+      <div class="screen active" id="scr-today">
+        <div class="hero-panel">
+          <div>
+            <div class="hero-greeting">Hi Brittany! ☀️</div>
+            <div class="hero-sub" id="hero-sub">Your garden's having a lovely sunny day. Three friends would love a quick visit — you've got this!</div>
+          </div>
+          <div class="weather-card">
+            <div class="sun-wrap">
+              <div class="sun-core"></div>
+              <div class="sun-rays"></div>
+            </div>
+            <div>
+              <div class="weather-temp">82°</div>
+              <div class="weather-desc">Sunny &amp; dry</div>
+            </div>
+          </div>
+        </div>
+        <div class="today-header">
+          <div class="section-label">Friends to visit today</div>
+          <div class="today-count" id="today-count">3 to go</div>
+        </div>
+        <div class="task-grid" id="task-grid"></div>
+      </div>
+
+      <!-- CARE BOARD -->
+      <div class="screen" id="scr-board">
+        <div class="screen-title">Care Board 🪴</div>
+        <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px">Your whole garden at a glance — drag-free and stress-free.</div>
+        <div class="board-grid" id="board-grid"></div>
+      </div>
+
+      <!-- PLANTERS -->
+      <div class="screen" id="scr-planters">
+        <div class="planters-header">
+          <div>
+            <div class="screen-title">Your Planters 🏡</div>
+            <div class="planters-sub">5 green friends, all under your care.</div>
+          </div>
+          <button class="add-btn">＋ Add a friend</button>
+        </div>
+        <div class="roster-grid" id="roster-grid"></div>
+      </div>
+
+      <!-- DETAIL -->
+      <div class="screen" id="scr-detail">
+        <div class="back-link" id="back-link">‹ Back to planters</div>
+        <div class="detail-container" id="detail-container"></div>
+      </div>
+
+      <!-- JOURNAL -->
+      <div class="screen" id="scr-journal">
+        <div class="screen-title">Garden Journal 📖</div>
+        <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px">Every moment of love you've given your garden.</div>
+        <div class="journal-stats">
+          <div class="stat-tile stat-tile-mint">
+            <div class="stat-number" id="stat-moments">14</div>
+            <div class="stat-label">moments logged</div>
+          </div>
+          <div class="stat-tile stat-tile-peach">
+            <div class="stat-number">6</div>
+            <div class="stat-label">harvests shared</div>
+          </div>
+          <div class="stat-tile stat-tile-butter">
+            <div class="stat-number">12</div>
+            <div class="stat-label">day streak 🔥</div>
+          </div>
+        </div>
+        <div class="timeline" id="journal-timeline"></div>
+      </div>
+
+      <!-- SETUP -->
+      <div class="screen" id="scr-settings">
+        <div class="screen-title">Garden Setup ⚙️</div>
+        <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px;margin-bottom:24px">Make it feel like yours.</div>
+        <div class="setup-card">
+          <div class="setup-card-title">🏡 About your garden</div>
+          <div class="setup-row"><span class="setup-label">Gardener</span><span class="setup-value">Brittany 🌼</span></div>
+          <div class="setup-row"><span class="setup-label">Garden name</span><span class="setup-value">The Sunny Patio</span></div>
+          <div class="setup-row"><span class="setup-label">Location</span><span class="setup-value">Portland, OR · zone 8b</span></div>
+          <div class="setup-row">
+            <span class="setup-label">Temperature</span>
+            <div class="temp-toggle">
+              <button class="temp-opt active">°F</button>
+              <button class="temp-opt">°C</button>
+            </div>
+          </div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">🔔 Friendly nudges</div>
+          <div class="setup-row"><span class="setup-label">Thirsty reminders</span><button class="toggle on" data-notif="water"><div class="toggle-knob"></div></button></div>
+          <div class="setup-row"><span class="setup-label">Harvest is ready</span><button class="toggle on" data-notif="harvest"><div class="toggle-knob"></div></button></div>
+          <div class="setup-row"><span class="setup-label">Weather watch</span><button class="toggle on" data-notif="weather"><div class="toggle-knob"></div></button></div>
+        </div>
+        <div class="offline-panel">
+          <div class="offline-icon">📿</div>
+          <div>
+            <div class="offline-title">Works offline</div>
+            <div class="offline-sub">Your garden lives on your device — no internet needed to log care, check schedules, or visit your plant friends. All data is yours. 🌱</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ============================
+// DATA
+// ============================
+const PHOTOS = {
+  cherry:    'assets/tomato.png',
+  romeo:     'assets/tomato.png',
+  basil:     'assets/basil.png',
+  pepperoni: 'assets/pepper.png',
+  buttercup: 'assets/lettuce.png'
+};
+
+const state = {
+  scr: 'today',
+  selId: null,
+  streak: 12,
+  doneToday: {},
+  notif: { water: true, harvest: true, weather: true },
+  plants: [
+    {
+      id: 'cherry', name: 'Cherry', kind: 'cherry tomato', planter: 'Patio Box', emoji: '🍅',
+      status: 'thirsty', mood: '😊', moodText: 'feeling great',
+      water: 'Tomorrow', sun: 'Full sun', feed: '5 days',
+      blurb: '"34 days old and I just made my first tomato! 🍅 A drink every couple days and lots of sun keeps me smiling."',
+      todayMsg: 'Soil\'s dry on top — a drink would make her day.',
+      rosterNote: 'Thirsty — a drink would be lovely.',
+      btnLabel: '💧 Give a drink', btnType: 'primary', actionType: 'water',
+      doneEmoji: '💧', doneTitle: 'All watered!', doneSub: 'Cherry is one happy plant.'
+    },
+    {
+      id: 'romeo', name: 'Romeo', kind: 'roma tomato', planter: 'Patio Box', emoji: '🍅',
+      status: 'happy', mood: '😎', moodText: 'chillin\'',
+      water: 'In 2 days', sun: 'Full sun', feed: '8 days',
+      blurb: '"I\'m growing strong and slow, just how I like it. More sun, a little patience, and I\'ll be worth the wait. 🍅"',
+      todayMsg: 'All good today — just enjoying the sunshine.',
+      rosterNote: 'All good and growing steadily.'
+    },
+    {
+      id: 'basil', name: 'Basil', kind: 'sweet basil', planter: 'Herb Pot', emoji: '🌿',
+      status: 'trim', mood: '😄', moodText: 'getting leafy',
+      water: 'Today', sun: 'Partial sun', feed: '10 days',
+      blurb: '"I\'ve got flowers coming in — but if you pinch them, I\'ll keep making tasty leaves all summer! ✂️"',
+      todayMsg: 'Pinch her flower buds to keep leaves coming.',
+      rosterNote: 'Flowers appearing — needs a trim soon.',
+      btnLabel: '✂️ Mark trimmed', btnType: 'outline', actionType: 'trim',
+      doneEmoji: '✨', doneTitle: 'Looking fresh!', doneSub: 'Basil says thank you.'
+    },
+    {
+      id: 'pepperoni', name: 'Pepperoni', kind: 'bell pepper', planter: 'Herb Pot', emoji: '🫑',
+      status: 'happy', mood: '😌', moodText: 'super content',
+      water: 'In 3 days', sun: 'Full sun', feed: '12 days',
+      blurb: '"Taking my time ripening — good things come to those who wait! Aiming for a big beautiful pepper by July. 🫑"',
+      todayMsg: 'Right on track — no action needed.',
+      rosterNote: 'Growing steadily, no action needed.'
+    },
+    {
+      id: 'buttercup', name: 'Buttercup', kind: 'butter lettuce', planter: 'Lettuce Bowl', emoji: '🥬',
+      status: 'harvest', mood: '😋', moodText: 'ready to share',
+      water: 'In 1 day', sun: 'Partial sun', feed: '14 days',
+      blurb: '"My outer leaves are plump and ready! Snip a few and I\'ll keep regrowing from the middle. Lunch is on me! 🥗"',
+      todayMsg: 'Snip a few outer leaves — lunch is served! 🥗',
+      rosterNote: 'Outer leaves ready — harvest time!',
+      btnLabel: '🧺 Harvest some', btnType: 'outline', actionType: 'pick',
+      doneEmoji: '🥗', doneTitle: 'Snipped & shared!', doneSub: 'Buttercup will regrow from the center.'
+    }
+  ],
+  journal: [
+    { id: 1, emoji: '💧', text: 'Watered Cherry', who: 'Cherry', date: 'Jun 19', dot: '#7fb0c9' },
+    { id: 2, emoji: '🌿', text: 'Fed Cherry with tomato-tone', who: 'Cherry', date: 'Jun 17', dot: '#6a8d5b' },
+    { id: 3, emoji: '🧺', text: 'Picked 6 cherry tomatoes', who: 'Cherry', date: 'Jun 14', dot: '#c98a5e' },
+    { id: 4, emoji: '🌼', text: "Cherry's first flower bloomed!", who: 'Cherry', date: 'Jun 12', dot: '#e3b34d' },
+    { id: 5, emoji: '💧', text: 'Watered Basil', who: 'Basil', date: 'Jun 20', dot: '#7fb0c9' },
+    { id: 6, emoji: '🌿', text: 'Fed Pepperoni', who: 'Pepperoni', date: 'Jun 11', dot: '#6a8d5b' }
+  ]
+};
+
+// ============================
+// HELPERS
+// ============================
+function photoEl(id, className, size) {
+  const src = PHOTOS[id];
+  if (src) {
+    return `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+  }
+  const p = state.plants.find(x => x.id === id);
+  return `<span style="font-size:${size||26}px">${p ? p.emoji : '🌿'}</span>`;
+}
+
+function statusPill(status) {
+  const map = {
+    thirsty: '<span class="status-pill pill-thirsty">💧 thirsty</span>',
+    trim:    '<span class="status-pill pill-trim">✂️ trim me</span>',
+    harvest: '<span class="status-pill pill-harvest">🧺 ready!</span>',
+    happy:   '<span class="status-pill pill-happy">✅ all good</span>'
+  };
+  return map[status] || '';
+}
+
+function rosterStatusPill(status) {
+  const map = {
+    thirsty: '<span class="roster-status-pill pill-thirsty">💧 thirsty</span>',
+    trim:    '<span class="roster-status-pill pill-trim">✂️ trim me</span>',
+    harvest: '<span class="roster-status-pill pill-harvest">🧺 ready!</span>',
+    happy:   ''
+  };
+  return map[status] || '';
+}
+
+function dotColor(type) {
+  return { water: '#7fb0c9', feed: '#6a8d5b', trim: '#c98a5e', pick: '#c98a5e' }[type] || '#a59a82';
+}
+
+// ============================
+// NAVIGATE
+// ============================
+function navigate(scr, selId) {
+  state.scr = scr;
+  state.selId = selId || null;
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    const t = btn.dataset.screen;
+    btn.classList.toggle('active', (scr === 'detail' && t === 'planters') || t === scr);
+  });
+
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('scr-' + scr);
+  if (el) el.classList.add('active');
+
+  const renders = { today: renderToday, board: renderBoard, planters: renderPlanters, detail: renderDetail, journal: renderJournal };
+  if (renders[scr]) renders[scr]();
+
+  document.querySelector('.main').scrollTop = 0;
+}
+
+// ============================
+// RENDER TODAY
+// ============================
+function renderToday() {
+  const tasks = state.plants.filter(p => ['thirsty','trim','harvest'].includes(p.status));
+  const remaining = tasks.filter(p => !state.doneToday[p.id]).length;
+
+  document.getElementById('hero-sub').textContent = remaining === 0
+    ? "Every friend's been visited — your garden is positively beaming. Go enjoy the sunshine! 🌻"
+    : `Your garden's having a lovely sunny day. ${remaining === 1 ? 'One friend' : remaining + ' friends'} would love a quick visit — you've got this!`;
+
+  document.getElementById('today-count').textContent = remaining === 0 ? 'All done! 🎉' : remaining + ' to go';
+
+  const badge = document.getElementById('badge');
+  badge.textContent = remaining;
+  badge.style.display = remaining === 0 ? 'none' : '';
+
+  const grid = document.getElementById('task-grid');
+  let html = '';
+
+  tasks.forEach(p => {
+    if (state.doneToday[p.id]) {
+      html += `<div class="task-card">
+        <div class="task-done">
+          <div class="task-done-emoji">${p.doneEmoji}</div>
+          <div class="task-done-title">${p.doneTitle}</div>
+          <div class="task-done-sub">${p.doneSub}</div>
+        </div>
+      </div>`;
+    } else {
+      const btnCls = p.btnType === 'primary' ? 'task-btn task-btn-primary' : 'task-btn task-btn-outline';
+      const hasPhoto = !!PHOTOS[p.id];
+      html += `<div class="task-card">
+        <div class="task-card-header">
+          <div class="plant-avatar ${hasPhoto ? '' : 'placeholder'}" onclick="navigate('detail','${p.id}')">
+            ${photoEl(p.id, '', 26)}
+          </div>
+          <div>
+            <div class="task-name">${p.name}</div>
+            ${statusPill(p.status)}
+          </div>
+        </div>
+        <div class="task-msg">${p.todayMsg}</div>
+        <button class="${btnCls}" onclick="logCare('${p.id}','${p.actionType}',event)">${p.btnLabel}</button>
+      </div>`;
+    }
+  });
+
+  const happy = state.plants.filter(p => p.status === 'happy');
+  if (happy.length > 0) {
+    const names = happy.map(p => p.name).join(' & ');
+    html += `<div class="happy-card">
+      <div class="happy-emoji">🌻</div>
+      <div class="happy-title">Everyone else is happy!</div>
+      <div class="happy-sub">${names} ${happy.length === 1 ? 'is' : 'are'} right on track. Come back tomorrow 🌱</div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+// ============================
+// RENDER BOARD
+// ============================
+function renderBoard() {
+  const thirsty = state.plants.filter(p => p.status === 'thirsty');
+  const love    = state.plants.filter(p => ['trim','harvest'].includes(p.status));
+  const happy   = state.plants.filter(p => p.status === 'happy');
+
+  function note(p) {
+    return { thirsty:'Needs a drink', trim:'Time for a trim', harvest:'Ready to harvest', happy:'All good!' }[p.status];
+  }
+  function chips(list) {
+    if (!list.length) return '<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">Nothing here right now 🌱</div>';
+    return list.map(p => {
+      const hasPhoto = !!PHOTOS[p.id];
+      return `<div class="plant-chip" onclick="navigate('detail','${p.id}')">
+        <div class="chip-avatar ${hasPhoto ? '' : 'placeholder'}">${photoEl(p.id,'',20)}</div>
+        <div>
+          <div class="chip-name">${p.name}</div>
+          <div class="chip-note">${note(p)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('board-grid').innerHTML = `
+    <div class="board-col board-col-thirsty">
+      <div class="board-col-header"><div class="board-col-title">Thirsty 💧</div><span class="board-col-count">${thirsty.length}</span></div>
+      ${chips(thirsty)}
+    </div>
+    <div class="board-col board-col-love">
+      <div class="board-col-header"><div class="board-col-title">Needs a little love 🌿</div><span class="board-col-count">${love.length}</span></div>
+      ${chips(love)}
+    </div>
+    <div class="board-col board-col-happy">
+      <div class="board-col-header"><div class="board-col-title">Happy &amp; thriving 🌻</div><span class="board-col-count">${happy.length}</span></div>
+      ${chips(happy)}
+    </div>`;
+}
+
+// ============================
+// RENDER PLANTERS
+// ============================
+function renderPlanters() {
+  document.getElementById('roster-grid').innerHTML = state.plants.map(p => {
+    const hasPhoto = !!PHOTOS[p.id];
+    return `<div class="roster-card" onclick="navigate('detail','${p.id}')">
+      <div class="roster-photo ${hasPhoto ? '' : 'placeholder'}">
+        ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">` : `<span class="roster-photo-emoji">${p.emoji}</span>`}
+        ${rosterStatusPill(p.status)}
+      </div>
+      <div class="roster-body">
+        <div class="roster-name-row">
+          <div class="roster-name">${p.name}</div>
+          <div class="roster-mood">${p.mood}</div>
+        </div>
+        <div class="roster-meta">${p.kind} · ${p.planter}</div>
+        <div class="roster-note">${p.rosterNote}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================
+// RENDER DETAIL
+// ============================
+function renderDetail() {
+  const p = state.plants.find(x => x.id === state.selId);
+  if (!p) return;
+
+  const hasPhoto = !!PHOTOS[p.id];
+  const plantJournal = state.journal.filter(e => e.who === p.name);
+
+  const storyHtml = plantJournal.length
+    ? plantJournal.map(e => `<div class="story-row">
+        <div class="story-row-emoji">${e.emoji}</div>
+        <div><div class="story-bold">${e.text}</div><div class="story-sub">${e.date}</div></div>
+      </div>`).join('')
+    : `<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">No entries yet — log some care to start ${p.name}'s story! 🌱</div>`;
+
+  document.getElementById('detail-container').innerHTML = `
+    <div class="detail-hero ${hasPhoto ? '' : 'placeholder'}">
+      ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${p.name}">` : `<div class="detail-hero-label">${p.emoji} photo · ${p.kind}</div>`}
+    </div>
+    <div class="detail-body">
+      <div class="detail-identity">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div>
+            <div class="detail-name">${p.name}</div>
+            <div class="detail-meta-text">${p.kind} · ${p.planter}</div>
+          </div>
+          <div class="mood-badge">
+            <span class="mood-badge-emoji">${p.mood}</span>
+            <span class="mood-badge-text">${p.moodText}</span>
+          </div>
+        </div>
+        <div class="detail-blurb">${p.blurb}</div>
+      </div>
+      <div class="vitals-grid">
+        <div class="vital-tile"><div class="vital-emoji">💧</div><div class="vital-value">${p.water}</div><div class="vital-label">next drink</div></div>
+        <div class="vital-tile"><div class="vital-emoji">☀️</div><div class="vital-value">${p.sun}</div><div class="vital-label">happy place</div></div>
+        <div class="vital-tile"><div class="vital-emoji">🌿</div><div class="vital-value">${p.feed}</div><div class="vital-label">till feeding</div></div>
+      </div>
+      <div class="log-buttons">
+        <button class="task-btn task-btn-primary" onclick="logCare('${p.id}','water',event)" style="flex:1">💧 Watered</button>
+        <button class="task-btn task-btn-outline" onclick="logCare('${p.id}','feed',event)" style="flex:1">🌿 Fed</button>
+        <button class="task-btn task-btn-outline" onclick="logCare('${p.id}','${p.actionType === 'pick' ? 'pick' : 'trim'}',event)" style="flex:1">${p.actionType === 'pick' ? '🧺 Picked' : '✂️ Trimmed'}</button>
+      </div>
+      <div class="story-section">
+        <div class="section-label" style="margin-bottom:12px">${p.name}'s story 🎉</div>
+        ${storyHtml}
+        <button class="story-add-btn">＋ Add to ${p.name}'s story</button>
+      </div>
+    </div>`;
+}
+
+// ============================
+// RENDER JOURNAL
+// ============================
+function renderJournal() {
+  document.getElementById('stat-moments').textContent = state.journal.length;
+  document.getElementById('journal-timeline').innerHTML = `
+    <div class="timeline-rail"></div>
+    ${state.journal.map(e => `
+      <div class="timeline-entry">
+        <div class="timeline-dot" style="background:${e.dot}"></div>
+        <div class="timeline-card">
+          <div class="timeline-emoji">${e.emoji}</div>
+          <div class="timeline-text">
+            <div class="timeline-bold">${e.text}</div>
+            <div class="timeline-sub">${e.who} · ${e.date}</div>
+          </div>
+        </div>
+      </div>`).join('')}`;
+}
+
+// ============================
+// LOG CARE
+// ============================
+function logCare(plantId, type, event) {
+  const p = state.plants.find(x => x.id === plantId);
+  if (!p) return;
+
+  const verbs = {
+    water: { text: `${p.name} got a refreshing drink`, emoji: '💧', title: 'All watered!',       sub: `${p.name} is one happy plant.` },
+    feed:  { text: `${p.name} enjoyed a tasty feed`,   emoji: '🌿', title: 'Well fed!',           sub: `${p.name} says yum.` },
+    trim:  { text: `${p.name} got a tidy trim`,        emoji: '✨', title: 'Looking fresh!',      sub: `${p.name} is feeling spritely.` },
+    pick:  { text: `Picked fresh from ${p.name}`,      emoji: '🥗', title: 'Snipped & shared!',  sub: `${p.name} will keep growing.` }
+  };
+  const v = verbs[type] || verbs.water;
+
+  state.doneToday[plantId] = type;
+  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: 'Just now', dot: dotColor(type) });
+
+  showToast(v.emoji, v.title, v.sub);
+
+  if (state.scr === 'today') renderToday();
+  if (state.scr === 'detail') renderDetail();
+}
+
+// ============================
+// TOAST
+// ============================
+function showToast(emoji, title, sub) {
+  const old = document.getElementById('app-toast');
+  if (old) old.remove();
+  document.querySelectorAll('.sparkle').forEach(s => s.remove());
+
+  const toast = document.createElement('div');
+  toast.id = 'app-toast';
+  toast.className = 'toast';
+  toast.innerHTML = `<span class="toast-emoji">${emoji}</span><div class="toast-title">${title}</div><div class="toast-sub">${sub}</div>`;
+  document.body.appendChild(toast);
+
+  ['✨','🌿','✨'].forEach((sp, i) => {
+    const el = document.createElement('div');
+    el.className = 'sparkle';
+    el.textContent = sp;
+    el.style.left = `calc(50% + ${(i-1)*42}px)`;
+    el.style.bottom = '90px';
+    el.style.animationDelay = i * 0.15 + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  });
+
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2400);
+}
+
+// ============================
+// EVENTS
+// ============================
+document.querySelectorAll('.nav-item[data-screen]').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.screen));
+});
+
+document.getElementById('back-link').addEventListener('click', () => navigate('planters'));
+
+document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.notif;
+    state.notif[key] = !state.notif[key];
+    btn.classList.toggle('on', state.notif[key]);
+  });
+});
+
+document.querySelectorAll('.temp-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.temp-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ============================
+// INIT
+// ============================
+navigate('today');
+</script>
+</body>
+</html>

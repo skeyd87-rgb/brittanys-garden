@@ -11,6 +11,7 @@ The current build is a static mobile web app that can be added to a phone home s
 - Blank-slate first run
 - Add and edit plants
 - Selectable location search
+- Live current weather for the selected location via Open-Meteo
 - Today view
 - Care Board
 - Planters view
@@ -26,6 +27,10 @@ The current build is a static mobile web app that can be added to a phone home s
 
 The current PWA tracks care inside the app. It does not send phone push notifications yet.
 - Local saved care state
+
+## Weather Source
+
+Weather uses Open-Meteo's forecast API with the latitude and longitude selected in Setup. It is forecast/model data, so it is useful for garden context but not a precise backyard sensor reading.
 
 ## Project Notes
 

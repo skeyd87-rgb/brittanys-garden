@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Garden">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='50'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/tomato.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -129,9 +130,14 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .hero-greeting { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 34px; color: #33442f; line-height: 1.1; }
 .hero-sub { font-size: 16px; color: #5e6a52; font-weight: 600; margin-top: 6px; max-width: 420px; line-height: 1.45; }
 .weather-card {
-  background: #fffdf7; border-radius: 20px;
+  background: #fffdf7; border-radius: 20px; border: 0;
   padding: 16px 22px; display: flex; align-items: center; gap: 14px; flex: none;
+  color: inherit; cursor: pointer; font-family: 'Nunito', sans-serif; text-align: left;
+  min-width: 194px; box-shadow: 0 2px 8px rgba(60,50,30,.04);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.weather-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(60,50,30,.08); }
+.weather-card:focus-visible { outline: 3px solid #d08c60; outline-offset: 3px; }
 .sun-wrap { position: relative; width: 42px; height: 42px; flex: none; }
 .sun-core { position: absolute; inset: 9px; border-radius: 50%; background: #e3b34d; box-shadow: 0 0 0 4px #f6ecc4; }
 .sun-rays {
@@ -141,8 +147,14 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   -webkit-mask: radial-gradient(circle, transparent 14px, #000 15px);
   mask: radial-gradient(circle, transparent 14px, #000 15px);
 }
+.weather-icon {
+  width: 42px; height: 42px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: #f6ecc4; font-size: 24px; box-shadow: inset 0 0 0 1px rgba(122,98,42,.08);
+}
 .weather-temp { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 26px; color: #33442f; }
 .weather-desc { font-size: 12px; color: #8a8270; font-weight: 600; margin-top: 1px; }
+.weather-source { font-size: 11px; color: #9b927f; font-weight: 800; margin-top: 2px; }
 .today-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .today-count { font-size: 14px; font-weight: 800; color: #6a8d5b; }
 .task-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -561,18 +573,16 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         <div class="hero-panel">
           <div>
             <div class="hero-greeting">Hi Brittany! ☀️</div>
-            <div class="hero-sub" id="hero-sub">Your garden's having a lovely sunny day. Three friends would love a quick visit — you've got this!</div>
+            <div class="hero-sub" id="hero-sub">Set a location in Setup to show local weather, then add plants to start tracking care.</div>
           </div>
-          <div class="weather-card">
-            <div class="sun-wrap">
-              <div class="sun-core"></div>
-              <div class="sun-rays"></div>
-            </div>
+          <button class="weather-card" type="button" data-action="refresh-weather" aria-label="Refresh weather">
+            <div class="weather-icon" id="weather-icon">📍</div>
             <div>
-              <div class="weather-temp">82°</div>
-              <div class="weather-desc">Sunny &amp; dry</div>
+              <div class="weather-temp" id="weather-temp">Set location</div>
+              <div class="weather-desc" id="weather-desc">Weather needs setup</div>
+              <div class="weather-source" id="weather-source">Select a city</div>
             </div>
-          </div>
+          </button>
         </div>
         <div class="today-header">
           <div class="section-label">Friends to visit today</div>
@@ -712,7 +722,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="offline-icon">📿</div>
           <div>
             <div class="offline-title">Works offline</div>
-            <div class="offline-sub">Your garden lives on your device — no internet needed to log care, check schedules, or visit your plant friends. All data is yours. 🌱</div>
+            <div class="offline-sub">Your garden lives on your device. No internet needed to log care, check schedules, or visit your plant friends. Weather and location search need internet. All data is yours. 🌱</div>
           </div>
         </div>
       </div>
@@ -735,7 +745,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">4. Edit setup and location</div>
-          <div class="empty-sub" style="text-align:left">Setup stores the garden name, selected location, temperature unit, and in-app care preferences. Location must be selected from search results.</div>
+          <div class="empty-sub" style="text-align:left">Setup stores the garden name, selected location, temperature unit, and in-app care preferences. Location must be selected from search results. Weather comes from Open-Meteo and needs internet to refresh.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">5. Add to phone home screen</div>
@@ -782,6 +792,14 @@ const state = {
     temp: 'F'
   },
   notif: { water: true, harvest: true, weather: true },
+  weather: {
+    status: 'empty',
+    temp: null,
+    code: null,
+    precipitation: null,
+    updatedAt: '',
+    message: ''
+  },
   plants: [],
   journal: []
 };
@@ -1015,6 +1033,157 @@ function selectLocation(button) {
   document.getElementById('location-results').innerHTML = '';
   syncSettingsControls();
   showToast('📍', 'Location saved', state.settings.location);
+  fetchWeather();
+}
+
+function hasSelectedCoordinates() {
+  return Number.isFinite(state.settings.latitude) && Number.isFinite(state.settings.longitude);
+}
+
+function weatherLabel(code) {
+  const labels = {
+    0: 'Clear',
+    1: 'Mostly clear',
+    2: 'Partly cloudy',
+    3: 'Overcast',
+    45: 'Foggy',
+    48: 'Foggy',
+    51: 'Light drizzle',
+    53: 'Drizzle',
+    55: 'Heavy drizzle',
+    56: 'Freezing drizzle',
+    57: 'Freezing drizzle',
+    61: 'Light rain',
+    63: 'Rain',
+    65: 'Heavy rain',
+    66: 'Freezing rain',
+    67: 'Freezing rain',
+    71: 'Light snow',
+    73: 'Snow',
+    75: 'Heavy snow',
+    77: 'Snow grains',
+    80: 'Light showers',
+    81: 'Showers',
+    82: 'Heavy showers',
+    85: 'Snow showers',
+    86: 'Heavy snow showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm',
+    99: 'Thunderstorm'
+  };
+  return labels[Number(code)] || 'Current weather';
+}
+
+function weatherIcon(code) {
+  const value = Number(code);
+  if ([0, 1].includes(value)) return '☀️';
+  if ([2, 3].includes(value)) return '☁️';
+  if ([45, 48].includes(value)) return '🌫️';
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(value)) return '🌧️';
+  if ([71, 73, 75, 77, 85, 86].includes(value)) return '❄️';
+  if ([95, 96, 99].includes(value)) return '⛈️';
+  return '🌤️';
+}
+
+function formatWeatherTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function renderWeather() {
+  const icon = document.getElementById('weather-icon');
+  const temp = document.getElementById('weather-temp');
+  const desc = document.getElementById('weather-desc');
+  const source = document.getElementById('weather-source');
+  if (!icon || !temp || !desc || !source) return;
+
+  if (!hasSelectedCoordinates()) {
+    icon.textContent = '📍';
+    temp.textContent = 'Set location';
+    desc.textContent = 'Weather needs setup';
+    source.textContent = 'Select a city';
+    return;
+  }
+
+  if (state.weather.status === 'loading') {
+    icon.textContent = '🌤️';
+    temp.textContent = 'Loading...';
+    desc.textContent = state.settings.location || 'Checking weather';
+    source.textContent = 'Open-Meteo';
+    return;
+  }
+
+  if (state.weather.status === 'error') {
+    icon.textContent = '!';
+    temp.textContent = 'Unavailable';
+    desc.textContent = 'Tap to retry';
+    source.textContent = state.weather.message || 'Open-Meteo failed';
+    return;
+  }
+
+  if (state.weather.status !== 'ready') {
+    icon.textContent = '🌤️';
+    temp.textContent = 'Refresh';
+    desc.textContent = 'Tap for weather';
+    source.textContent = 'Open-Meteo';
+    return;
+  }
+
+  const unit = state.settings.temp === 'C' ? 'C' : 'F';
+  const precip = Number(state.weather.precipitation);
+  const precipText = Number.isFinite(precip) && precip > 0
+    ? `, ${precip.toFixed(precip < 0.1 ? 2 : 1)} in rain now`
+    : '';
+  icon.textContent = weatherIcon(state.weather.code);
+  temp.textContent = `${Math.round(Number(state.weather.temp))}°${unit}`;
+  desc.textContent = `${weatherLabel(state.weather.code)}${precipText}`;
+  source.textContent = `Open-Meteo, ${formatWeatherTime(state.weather.updatedAt) || 'updated'}`;
+}
+
+async function fetchWeather() {
+  if (!hasSelectedCoordinates()) {
+    state.weather = { status: 'empty', temp: null, code: null, precipitation: null, updatedAt: '', message: '' };
+    renderWeather();
+    return;
+  }
+
+  state.weather = { ...state.weather, status: 'loading', message: '' };
+  renderWeather();
+
+  const unit = state.settings.temp === 'C' ? 'celsius' : 'fahrenheit';
+  const latitude = encodeURIComponent(state.settings.latitude.toFixed(4));
+  const longitude = encodeURIComponent(state.settings.longitude.toFixed(4));
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,precipitation&temperature_unit=${unit}&precipitation_unit=inch&timezone=auto&forecast_days=1`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather request failed');
+    const data = await response.json();
+    if (!data.current || !Number.isFinite(Number(data.current.temperature_2m))) throw new Error('Weather data missing');
+
+    state.weather = {
+      status: 'ready',
+      temp: Number(data.current.temperature_2m),
+      code: Number(data.current.weather_code),
+      precipitation: Number(data.current.precipitation || 0),
+      updatedAt: data.current.time || new Date().toISOString(),
+      message: ''
+    };
+  } catch (error) {
+    state.weather = {
+      status: 'error',
+      temp: null,
+      code: null,
+      precipitation: null,
+      updatedAt: '',
+      message: 'Check connection'
+    };
+  }
+
+  renderWeather();
+  if (state.scr === 'today') renderToday();
 }
 
 // ============================
@@ -1045,13 +1214,20 @@ function navigate(scr, selId) {
 function renderToday() {
   const tasks = state.plants.filter(p => ['thirsty','trim','harvest'].includes(p.status));
   const remaining = tasks.filter(p => !state.doneToday[p.id]).length;
+  const weatherLine = state.weather.status === 'ready'
+    ? `${state.settings.location || 'Your garden'} is ${weatherLabel(state.weather.code).toLowerCase()} right now.`
+    : hasSelectedCoordinates()
+    ? `Weather is set for ${state.settings.location || 'your selected location'}.`
+    : 'Set a location in Setup to show local weather.';
 
   document.querySelector('.hero-greeting').textContent = `Hi ${state.settings.gardener || 'Brittany'}! ☀️`;
   document.getElementById('hero-sub').textContent = state.plants.length === 0
-    ? `Start by adding the first plant in ${state.settings.garden || 'your garden'}.`
+    ? `Start by adding the first plant in ${state.settings.garden || 'your garden'}. ${weatherLine}`
     : remaining === 0
-    ? "Everything logged for now. Check back when a plant needs care."
-    : `Your garden's having a lovely sunny day. ${remaining === 1 ? 'One friend' : remaining + ' friends'} would love a quick visit — you've got this!`;
+    ? `Everything logged for now. ${weatherLine}`
+    : `${weatherLine} ${remaining === 1 ? 'One friend' : remaining + ' friends'} would love a quick visit.`;
+
+  renderWeather();
 
   document.getElementById('today-count').textContent = state.plants.length === 0 ? 'blank slate' : remaining === 0 ? 'All done! 🎉' : remaining + ' to go';
 
@@ -1436,6 +1612,7 @@ document.addEventListener('click', event => {
   if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
   if (action === 'search-location') searchLocation();
   if (action === 'select-location') selectLocation(button);
+  if (action === 'refresh-weather') fetchWeather();
 });
 
 document.getElementById('back-link').addEventListener('click', () => navigate('planters'));
@@ -1455,6 +1632,7 @@ document.querySelectorAll('.temp-opt').forEach(btn => {
     state.settings.temp = btn.dataset.temp;
     syncSettingsControls();
     saveState();
+    fetchWeather();
   });
 });
 
@@ -1468,6 +1646,7 @@ document.querySelectorAll('.setting-input').forEach(input => {
       state.settings.latitude = null;
       state.settings.longitude = null;
       state.settings.timezone = '';
+      state.weather = { status: 'empty', temp: null, code: null, precipitation: null, updatedAt: '', message: '' };
       document.getElementById('location-results').innerHTML = '';
       renderSelectedLocation('Search and select a location.');
     }
@@ -1489,6 +1668,7 @@ document.getElementById('setting-location-search').addEventListener('keydown', e
 // ============================
 syncSettingsControls();
 navigate('today');
+fetchWeather();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').then(registration => {

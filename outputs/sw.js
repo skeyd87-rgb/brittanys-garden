@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brittanys-garden-v3';
+const CACHE_NAME = 'brittanys-garden-v4';
 const APP_ASSETS = [
   './',
   './index.html',
@@ -28,6 +28,12 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+
+  if (url.hostname.includes('open-meteo.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(

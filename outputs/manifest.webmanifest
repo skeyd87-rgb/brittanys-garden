@@ -1,0 +1,25 @@
+{
+  "name": "Brittany's Garden",
+  "short_name": "Garden",
+  "description": "A cozy mobile garden care companion for Brittany.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3efe6",
+  "theme_color": "#6a8d5b",
+  "icons": [
+    {
+      "src": "assets/tomato.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/basil.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

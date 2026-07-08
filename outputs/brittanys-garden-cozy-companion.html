@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#6a8d5b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Garden">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/tomato.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -341,6 +341,22 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 }
 .field textarea { min-height: 82px; resize: vertical; }
 .setting-input { max-width: 230px; text-align: right; }
+.location-picker { width: min(360px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.location-search-row { display: flex; gap: 8px; }
+.location-search-row .setting-input { max-width: none; text-align: left; flex: 1; }
+.location-results { display: grid; gap: 6px; }
+.location-result {
+  border: 1.5px solid #d8cfb8;
+  background: #fffdf7;
+  color: #33442f;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: 800 13px 'Nunito', sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.location-result:hover { background: #f3efe6; }
+.location-selected { font-size: 12px; font-weight: 700; color: #5e6a52; line-height: 1.35; }
 .form-actions { display: flex; gap: 10px; margin-top: 16px; }
 .hidden { display: none !important; }
 .empty-state {
@@ -438,7 +454,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .main {
     height: 100vh;
     height: 100dvh;
-    padding: 18px 14px calc(102px + env(safe-area-inset-bottom));
+    padding: calc(28px + env(safe-area-inset-top)) 14px calc(102px + env(safe-area-inset-bottom));
+    scroll-padding-top: calc(28px + env(safe-area-inset-top));
   }
   .content-col { max-width: none; }
   .hero-panel {
@@ -468,10 +485,11 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .detail-name { font-size: 30px; }
   .mood-badge { padding: 7px 10px; }
   .log-buttons { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .setup-row { gap: 16px; align-items: flex-start; }
+  .setup-row { gap: 16px; align-items: flex-start; flex-direction: column; }
   .field-grid { grid-template-columns: 1fr; }
   .form-actions { flex-direction: column; }
-  .setting-input { max-width: 190px; }
+  .setting-input { max-width: none; text-align: left; }
+  .location-search-row { flex-direction: column; }
   .toast {
     bottom: calc(96px + env(safe-area-inset-bottom));
     left: 16px;
@@ -523,6 +541,9 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     </button>
     <button class="nav-item" data-screen="settings">
       <span class="nav-icon">⚙️</span> Setup
+    </button>
+    <button class="nav-item" data-screen="howto">
+      <span class="nav-icon">❔</span> How To
     </button>
     <div class="streak-card">
       <span class="streak-emoji">🌻</span>
@@ -661,7 +682,17 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="setup-card-title">🏡 About your garden</div>
           <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off"></div>
           <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off"></div>
-          <div class="setup-row"><label class="setup-label" for="setting-location">Location</label><input class="setting-input" id="setting-location" autocomplete="off"></div>
+          <div class="setup-row">
+            <label class="setup-label" for="setting-location-search">Location</label>
+            <div class="location-picker">
+              <div class="location-search-row">
+                <input class="setting-input" id="setting-location-search" autocomplete="off" placeholder="Search city or ZIP">
+                <button class="task-btn task-btn-outline" type="button" data-action="search-location" style="margin-top:0;width:auto;min-width:92px">Search</button>
+              </div>
+              <div class="location-selected" id="location-selected">No location selected.</div>
+              <div class="location-results" id="location-results"></div>
+            </div>
+          </div>
           <div class="setup-row">
             <span class="setup-label">Temperature</span>
             <div class="temp-toggle">
@@ -671,7 +702,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           </div>
         </div>
         <div class="setup-card">
-          <div class="setup-card-title">🔔 Friendly nudges</div>
+          <div class="setup-card-title">🔔 Care preferences</div>
+          <div class="empty-sub" style="text-align:left;margin-bottom:10px">These control what shows inside the app. Phone notifications are not enabled yet.</div>
           <div class="setup-row"><span class="setup-label">Thirsty reminders</span><button class="toggle on" type="button" data-notif="water" aria-label="Toggle thirsty reminders"><div class="toggle-knob"></div></button></div>
           <div class="setup-row"><span class="setup-label">Harvest is ready</span><button class="toggle on" type="button" data-notif="harvest" aria-label="Toggle harvest reminders"><div class="toggle-knob"></div></button></div>
           <div class="setup-row"><span class="setup-label">Weather watch</span><button class="toggle on" type="button" data-notif="weather" aria-label="Toggle weather watch"><div class="toggle-knob"></div></button></div>
@@ -681,6 +713,39 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div>
             <div class="offline-title">Works offline</div>
             <div class="offline-sub">Your garden lives on your device — no internet needed to log care, check schedules, or visit your plant friends. All data is yours. 🌱</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOW TO -->
+      <div class="screen" id="scr-howto">
+        <div class="screen-title">How To 🌱</div>
+        <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px;margin-bottom:24px">The quick version for using Brittany's Garden.</div>
+        <div class="setup-card">
+          <div class="setup-card-title">1. Add the first plant</div>
+          <div class="empty-sub" style="text-align:left">Go to Planters, tap Add a plant, then save its name, type, planter, care status, and notes.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">2. Use Today for care</div>
+          <div class="empty-sub" style="text-align:left">Today only shows plants that need water, trimming, or harvesting. Mark care when it is done.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">3. Use Care Board for the overview</div>
+          <div class="empty-sub" style="text-align:left">Care Board groups plants by what needs attention so Brittany can scan the whole garden fast.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">4. Edit setup and location</div>
+          <div class="empty-sub" style="text-align:left">Setup stores the garden name, selected location, temperature unit, and in-app care preferences. Location must be selected from search results.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">5. Add to phone home screen</div>
+          <div class="empty-sub" style="text-align:left">Open the app link on the phone, use the browser share menu, then choose Add to Home Screen.</div>
+        </div>
+        <div class="offline-panel">
+          <div class="offline-icon">🔔</div>
+          <div>
+            <div class="offline-title">About nudges</div>
+            <div class="offline-sub">This version does not send push notifications. It tracks care inside the app. Real phone reminders would need notification permission plus a small backend or scheduled notification system.</div>
           </div>
         </div>
       </div>
@@ -710,6 +775,10 @@ const state = {
     gardener: 'Brittany',
     garden: 'My Garden',
     location: '',
+    locationQuery: '',
+    latitude: null,
+    longitude: null,
+    timezone: '',
     temp: 'F'
   },
   notif: { water: true, harvest: true, weather: true },
@@ -717,7 +786,7 @@ const state = {
   journal: []
 };
 
-const storageKey = 'brittanys-garden-mobile-v2';
+const storageKey = 'brittanys-garden-mobile-v3';
 
 function hydrateState() {
   try {
@@ -879,13 +948,73 @@ function closePlantForm() {
 function syncSettingsControls() {
   document.getElementById('setting-gardener').value = state.settings.gardener || '';
   document.getElementById('setting-garden').value = state.settings.garden || '';
-  document.getElementById('setting-location').value = state.settings.location || '';
+  document.getElementById('setting-location-search').value = state.settings.locationQuery || state.settings.location || '';
+  renderSelectedLocation();
   document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
     btn.classList.toggle('on', !!state.notif[btn.dataset.notif]);
   });
   document.querySelectorAll('.temp-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.temp === state.settings.temp);
   });
+}
+
+function renderSelectedLocation(message) {
+  const selected = document.getElementById('location-selected');
+  if (!selected) return;
+  if (message) {
+    selected.textContent = message;
+    return;
+  }
+  selected.textContent = state.settings.location
+    ? `Selected: ${state.settings.location}`
+    : 'No location selected.';
+}
+
+async function searchLocation() {
+  const query = document.getElementById('setting-location-search').value.trim();
+  const results = document.getElementById('location-results');
+  state.settings.locationQuery = query;
+  saveState();
+  results.innerHTML = '';
+
+  if (query.length < 2) {
+    renderSelectedLocation('Type at least 2 characters, then search.');
+    return;
+  }
+
+  renderSelectedLocation('Searching locations...');
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Location search failed');
+    const data = await response.json();
+    const matches = Array.isArray(data.results) ? data.results : [];
+
+    if (!matches.length) {
+      renderSelectedLocation('No matching locations found.');
+      return;
+    }
+
+    results.innerHTML = matches.map(place => {
+      const label = [place.name, place.admin1, place.country_code].filter(Boolean).join(', ');
+      return `<button class="location-result" type="button" data-action="select-location" data-name="${escapeHtml(label)}" data-lat="${place.latitude}" data-lon="${place.longitude}" data-timezone="${escapeHtml(place.timezone || '')}">${escapeHtml(label)}</button>`;
+    }).join('');
+    renderSelectedLocation('Select one of the results below.');
+  } catch (error) {
+    renderSelectedLocation('Location search is unavailable right now.');
+  }
+}
+
+function selectLocation(button) {
+  state.settings.location = button.dataset.name || '';
+  state.settings.locationQuery = state.settings.location;
+  state.settings.latitude = Number(button.dataset.lat);
+  state.settings.longitude = Number(button.dataset.lon);
+  state.settings.timezone = button.dataset.timezone || '';
+  saveState();
+  document.getElementById('location-results').innerHTML = '';
+  syncSettingsControls();
+  showToast('📍', 'Location saved', state.settings.location);
 }
 
 // ============================
@@ -1305,6 +1434,8 @@ document.addEventListener('click', event => {
   if (action === 'edit-plant') openPlantForm(button.dataset.id);
   if (action === 'delete-plant') deletePlant(button.dataset.id);
   if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
+  if (action === 'search-location') searchLocation();
+  if (action === 'select-location') selectLocation(button);
 });
 
 document.getElementById('back-link').addEventListener('click', () => navigate('planters'));
@@ -1331,11 +1462,26 @@ document.querySelectorAll('.setting-input').forEach(input => {
   input.addEventListener('input', () => {
     state.settings.gardener = document.getElementById('setting-gardener').value.trim() || 'Brittany';
     state.settings.garden = document.getElementById('setting-garden').value.trim() || 'My Garden';
-    state.settings.location = document.getElementById('setting-location').value.trim();
+    state.settings.locationQuery = document.getElementById('setting-location-search').value.trim();
+    if (input.id === 'setting-location-search' && state.settings.locationQuery !== state.settings.location) {
+      state.settings.location = '';
+      state.settings.latitude = null;
+      state.settings.longitude = null;
+      state.settings.timezone = '';
+      document.getElementById('location-results').innerHTML = '';
+      renderSelectedLocation('Search and select a location.');
+    }
     saveState();
     renderToday();
     renderPlanters();
   });
+});
+
+document.getElementById('setting-location-search').addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    searchLocation();
+  }
 });
 
 // ============================

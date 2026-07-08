@@ -10,15 +10,21 @@ The current build is a static mobile web app that can be added to a phone home s
 
 - Blank-slate first run
 - Add and edit plants
+- Selectable location search
 - Today view
 - Care Board
 - Planters view
 - Plant detail view
 - Garden Journal
 - Editable setup fields
+- In-app How To section
 - Local saved data and generated plant assets
 - Home-screen manifest
 - Offline cache
+
+## Notification Limit
+
+The current PWA tracks care inside the app. It does not send phone push notifications yet.
 - Local saved care state
 
 ## Project Notes

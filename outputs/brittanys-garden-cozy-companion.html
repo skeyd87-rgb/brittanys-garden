@@ -321,6 +321,12 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .vital-label { font-size: 12px; color: #8a8270; font-weight: 600; }
 .detail-plan { margin-top: 16px; }
 .log-buttons { display: flex; gap: 10px; margin-top: 16px; }
+.smart-card { margin-top: 16px; background: #fffdf7; border-radius: 22px; padding: 18px; box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc; }
+.smart-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 20px; color: #33442f; }
+.smart-sub { font-size: 13px; color: #8a8270; font-weight: 700; margin-top: 2px; }
+.smart-list { display: grid; gap: 8px; margin-top: 12px; }
+.smart-item { background: #f8f4eb; border-radius: 14px; padding: 10px 12px; font-size: 13px; color: #5e6a52; font-weight: 800; line-height: 1.35; }
+.ai-output { margin-top: 12px; font-size: 13px; color: #33442f; font-weight: 700; line-height: 1.45; background: #eef2e6; border-radius: 14px; padding: 12px; white-space: pre-wrap; }
 .story-section { margin-top: 22px; }
 .story-row { background: #fffdf7; border-radius: 16px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .story-row-emoji { font-size: 22px; }
@@ -382,6 +388,9 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .field textarea { min-height: 82px; resize: vertical; }
 .cadence-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .cadence-row select { min-width: 0; }
+.scan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.scan-row .task-btn { margin-top: 0; width: auto; white-space: nowrap; }
+.field-help { font-size: 12px; color: #8a8270; font-weight: 700; line-height: 1.35; }
 .setting-input { max-width: 230px; text-align: right; }
 .location-picker { width: min(360px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
 .location-search-row { display: flex; gap: 8px; }
@@ -445,6 +454,28 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .toast-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 17px; margin-top: 6px; }
 .toast-sub { font-size: 13px; font-weight: 600; color: #cdd6c2; margin-top: 3px; }
 .sparkle { position: fixed; font-size: 20px; pointer-events: none; z-index: 999; animation: floatUp 1s ease-out forwards; }
+.scanner-panel {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(43, 55, 38, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.scanner-panel.hidden { display: none; }
+.scanner-card {
+  width: min(420px, 100%);
+  background: #fffdf7;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 18px 42px rgba(25, 35, 20, .35);
+}
+.scanner-video {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #1e2a1c;
+  border-radius: 16px;
+  object-fit: cover;
+}
+.scanner-status { margin-top: 10px; font-size: 13px; color: #5e6a52; font-weight: 800; line-height: 1.35; }
 
 @media (max-width: 1100px) and (min-width: 761px) {
   .main { padding: 28px 24px; }
@@ -530,6 +561,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .log-buttons { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .setup-row { gap: 16px; align-items: flex-start; flex-direction: column; }
   .field-grid { grid-template-columns: 1fr; }
+  .scan-row { grid-template-columns: 1fr; }
   .form-actions { flex-direction: column; }
   .setting-input { max-width: none; text-align: left; }
   .location-search-row { flex-direction: column; }
@@ -649,6 +681,15 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
             <div class="field">
               <label for="plant-kind">Plant type</label>
               <input id="plant-kind" autocomplete="off" placeholder="Tomato, basil, pepper">
+            </div>
+            <div class="field field-full">
+              <label for="plant-seed-code">Seed package</label>
+              <div class="scan-row">
+                <input id="plant-seed-code" autocomplete="off" placeholder="Scan or enter barcode / QR code">
+                <button class="task-btn task-btn-outline" type="button" data-action="start-barcode-scan">Scan</button>
+                <button class="task-btn task-btn-outline" type="button" data-action="use-knowledge">Use guide</button>
+              </div>
+              <div class="field-help">Barcode stores the package code. QR/text scans can prefill plant type when recognizable.</div>
             </div>
             <div class="field">
               <label for="plant-planter">Planter</label>
@@ -801,6 +842,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="setup-card-title">🏡 About your garden</div>
           <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off"></div>
           <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off"></div>
+          <div class="setup-row"><label class="setup-label" for="setting-ai-endpoint">AI helper URL</label><input class="setting-input" id="setting-ai-endpoint" autocomplete="off" placeholder="Optional private endpoint"></div>
           <div class="setup-row">
             <label class="setup-label" for="setting-location-search">Location</label>
             <div class="location-picker">
@@ -861,7 +903,15 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="empty-sub" style="text-align:left">When adding or editing a plant, choose Water every, Feed every, and Check harvest every from the dropdowns. Add a Harvest cue such as "pick when red" so Brittany knows what to look for. Each completed action rolls the next date forward from the day it is logged.</div>
         </div>
         <div class="setup-card">
-          <div class="setup-card-title">6. Add to phone home screen</div>
+          <div class="setup-card-title">6. Scan seed packages</div>
+          <div class="empty-sub" style="text-align:left">In Add or Edit Plant, use Seed package to scan a barcode or QR code. Some browsers do not support direct barcode reading yet, so the code can also be typed manually. Use guide fills common care defaults when the plant type is recognized.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">7. Use AI carefully</div>
+          <div class="empty-sub" style="text-align:left">Plant detail pages show built-in guide notes. Private AI advice works only after an AI helper URL is added in Setup. The app does not store or expose an AI API key in the browser.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">8. Add to phone home screen</div>
           <div class="empty-sub" style="text-align:left">Open the app link on the phone, use the browser share menu, then choose Add to Home Screen.</div>
         </div>
         <div class="offline-panel">
@@ -876,6 +926,15 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     </div>
   </main>
 </div>
+<div class="scanner-panel hidden" id="scanner-panel" aria-hidden="true">
+  <div class="scanner-card">
+    <div class="smart-title">Scan seed package</div>
+    <div class="smart-sub">Point the camera at the barcode or QR code.</div>
+    <video class="scanner-video" id="barcode-video" playsinline muted></video>
+    <div class="scanner-status" id="barcode-status">Camera is off.</div>
+    <button class="task-btn task-btn-outline" type="button" data-action="stop-barcode-scan">Close scanner</button>
+  </div>
+</div>
 
 <script>
 // ============================
@@ -888,6 +947,17 @@ const PHOTOS = {
   pepperoni: 'assets/pepper.png',
   buttercup: 'assets/lettuce.png'
 };
+
+const PLANT_GUIDE = [
+  { terms: ['tomato'], kind: 'Tomato', sun: 'Full sun', water: [2, 'day'], feed: [14, 'day'], harvest: [2, 'day'], cue: 'Pick when fully colored and slightly firm', note: 'Container tomatoes dry quickly. Check soil on hot afternoons.' },
+  { terms: ['basil'], kind: 'Basil', sun: 'Full sun to part sun', water: [2, 'day'], feed: [21, 'day'], harvest: [3, 'day'], cue: 'Pinch leafy tips before flowers form', note: 'Harvest often to keep basil bushy.' },
+  { terms: ['pepper'], kind: 'Pepper', sun: 'Full sun', water: [3, 'day'], feed: [14, 'day'], harvest: [3, 'day'], cue: 'Pick at desired color and size', note: 'Keep watering steady once fruit starts forming.' },
+  { terms: ['lettuce', 'kale', 'spinach', 'arugula'], kind: 'Leafy green', sun: 'Part sun', water: [2, 'day'], feed: [21, 'day'], harvest: [2, 'day'], cue: 'Cut outer leaves when large enough', note: 'Leafy greens prefer steady moisture and cooler parts of the day.' },
+  { terms: ['cucumber', 'zucchini', 'squash'], kind: 'Vining vegetable', sun: 'Full sun', water: [2, 'day'], feed: [14, 'day'], harvest: [2, 'day'], cue: 'Pick before fruit gets oversized', note: 'Check daily once fruit starts appearing.' },
+  { terms: ['carrot', 'radish', 'beet'], kind: 'Root vegetable', sun: 'Full sun to part sun', water: [3, 'day'], feed: [30, 'day'], harvest: [7, 'day'], cue: 'Check shoulders or seed packet days-to-maturity', note: 'Keep soil evenly moist while seedlings establish.' },
+  { terms: ['cilantro', 'parsley', 'dill', 'oregano', 'thyme', 'mint', 'rosemary'], kind: 'Herb', sun: 'Full sun to part sun', water: [3, 'day'], feed: [30, 'day'], harvest: [4, 'day'], cue: 'Snip outer stems once established', note: 'Most herbs prefer modest feeding and regular trimming.' },
+  { terms: ['marigold', 'zinnia', 'flower'], kind: 'Flower', sun: 'Full sun', water: [3, 'day'], feed: [30, 'day'], harvest: [7, 'day'], cue: 'Deadhead fading blooms', note: 'Remove spent flowers to encourage more blooms.' }
+];
 
 const state = {
   scr: 'today',
@@ -902,7 +972,8 @@ const state = {
     latitude: null,
     longitude: null,
     timezone: '',
-    temp: 'F'
+    temp: 'F',
+    aiEndpoint: ''
   },
   notif: { water: true, harvest: true, weather: true },
   weather: {
@@ -918,6 +989,8 @@ const state = {
 };
 
 const storageKey = 'brittanys-garden-mobile-v3';
+let barcodeStream = null;
+let barcodeScanTimer = null;
 
 function hydrateState() {
   try {
@@ -1102,6 +1175,55 @@ function setCadenceControls(prefix, text, repeat) {
   const parsed = normalizeRepeat(repeat) || normalizeRepeat(parseCareRepeat(text));
   countEl.value = parsed ? String(parsed.count) : '';
   unitEl.value = parsed?.unit || 'day';
+}
+
+function setCadenceValue(prefix, cadence) {
+  const countEl = document.getElementById(`${prefix}-count`);
+  const unitEl = document.getElementById(`${prefix}-unit`);
+  if (!countEl || !unitEl || !cadence) return;
+  countEl.value = String(cadence[0] || '');
+  unitEl.value = cadence[1] === 'week' ? 'week' : 'day';
+}
+
+function findGuideMatch(text) {
+  const value = String(text || '').toLowerCase();
+  if (!value) return null;
+  return PLANT_GUIDE.find(item => item.terms.some(term => value.includes(term))) || null;
+}
+
+function guideForForm() {
+  const seedCode = document.getElementById('plant-seed-code')?.value || '';
+  const name = document.getElementById('plant-name')?.value || '';
+  const kind = document.getElementById('plant-kind')?.value || '';
+  return findGuideMatch(`${seedCode} ${name} ${kind}`);
+}
+
+function applyGuideToForm(sourceText) {
+  const guide = findGuideMatch(sourceText || '') || guideForForm();
+  if (!guide) {
+    showToast('🌱', 'No guide match', 'Enter a plant type like tomato, basil, pepper, lettuce, or herb.');
+    return false;
+  }
+
+  const nameEl = document.getElementById('plant-name');
+  const kindEl = document.getElementById('plant-kind');
+  const sunEl = document.getElementById('plant-sun');
+  const cueEl = document.getElementById('plant-harvest-cue');
+  const notesEl = document.getElementById('plant-notes');
+
+  if (nameEl && !nameEl.value.trim()) nameEl.value = guide.kind;
+  if (kindEl && !kindEl.value.trim()) kindEl.value = guide.kind;
+  if (sunEl && !sunEl.value.trim()) sunEl.value = guide.sun;
+  if (cueEl && !cueEl.value.trim()) cueEl.value = guide.cue;
+  setCadenceValue('plant-water', guide.water);
+  setCadenceValue('plant-feed', guide.feed);
+  setCadenceValue('plant-harvest', guide.harvest);
+  if (notesEl && !notesEl.value.includes(guide.note)) {
+    notesEl.value = [notesEl.value.trim(), guide.note].filter(Boolean).join('\n');
+  }
+
+  showToast('🌿', 'Guide applied', `${guide.kind} care defaults were added.`);
+  return true;
 }
 
 function repeatDays(repeat) {
@@ -1461,6 +1583,44 @@ function plantBlurb(p) {
   return p.notes || `${p.name} is part of ${state.settings.garden || 'the garden'}.`;
 }
 
+function smartAdviceItems(p) {
+  const guide = findGuideMatch(`${p.seedCode || ''} ${p.name || ''} ${p.kind || ''}`);
+  const items = [];
+  if (guide) {
+    items.push(`Guide match: ${guide.kind}. ${guide.note}`);
+    items.push(`Suggested light: ${guide.sun}.`);
+  } else {
+    items.push('No exact guide match yet. Add a plant type or scan package text for better suggestions.');
+  }
+  if (p.seedCode) items.push(`Seed package code saved: ${p.seedCode}.`);
+  if (state.weather.status === 'ready') {
+    const rain = Number(state.weather.precipitation || 0);
+    items.push(rain > 0 ? 'Weather note: rain is showing now, but containers may still need soil checks.' : 'Weather note: no current rain showing, so container soil checks still matter.');
+  }
+  return items;
+}
+
+function smartAdviceHtml(p) {
+  const endpointReady = !!String(state.settings.aiEndpoint || '').trim();
+  const aiText = p.aiAdviceStatus === 'loading'
+    ? 'Asking the private AI helper...'
+    : p.aiAdvice
+    ? p.aiAdvice
+    : endpointReady
+    ? 'Private AI helper is configured. Tap Ask AI for plant-specific guidance.'
+    : 'Private AI is not configured yet. Built-in guide guidance is shown above.';
+
+  return `<div class="smart-card">
+    <div class="smart-title">AI / Knowledge</div>
+    <div class="smart-sub">Built-in guide now. Private AI only when an endpoint is configured in Setup.</div>
+    <div class="smart-list">
+      ${smartAdviceItems(p).map(item => `<div class="smart-item">${escapeHtml(item)}</div>`).join('')}
+    </div>
+    <div class="ai-output">${escapeHtml(aiText)}</div>
+    <button class="task-btn ${endpointReady ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="ask-ai" data-id="${p.id}">${endpointReady ? 'Ask AI' : 'AI setup needed'}</button>
+  </div>`;
+}
+
 function openPlantForm(id) {
   const form = document.getElementById('plant-form');
   const plant = state.plants.find(p => p.id === id);
@@ -1469,6 +1629,7 @@ function openPlantForm(id) {
   document.getElementById('plant-id').value = plant?.id || '';
   document.getElementById('plant-name').value = plant?.name || '';
   document.getElementById('plant-kind').value = plant?.kind || '';
+  document.getElementById('plant-seed-code').value = plant?.seedCode || '';
   document.getElementById('plant-planter').value = plant?.planter || '';
   document.getElementById('plant-status').value = plant?.status || 'happy';
   setCadenceControls('plant-water', plant?.care?.water?.text || plant?.water || '', plant?.care?.water?.repeat);
@@ -1491,6 +1652,7 @@ function closePlantForm() {
 function syncSettingsControls() {
   document.getElementById('setting-gardener').value = state.settings.gardener || '';
   document.getElementById('setting-garden').value = state.settings.garden || '';
+  document.getElementById('setting-ai-endpoint').value = state.settings.aiEndpoint || '';
   document.getElementById('setting-location-search').value = state.settings.locationQuery || state.settings.location || '';
   renderSelectedLocation();
   document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
@@ -1559,6 +1721,109 @@ function selectLocation(button) {
   syncSettingsControls();
   showToast('📍', 'Location saved', state.settings.location);
   fetchWeather();
+}
+
+function setScannerStatus(message) {
+  const status = document.getElementById('barcode-status');
+  if (status) status.textContent = message;
+}
+
+function cleanScanText(value) {
+  try {
+    return decodeURIComponent(String(value || '').trim());
+  } catch (error) {
+    return String(value || '').trim();
+  }
+}
+
+function applyScannedSeedCode(value) {
+  const clean = cleanScanText(value);
+  if (!clean) return;
+  const seedEl = document.getElementById('plant-seed-code');
+  const notesEl = document.getElementById('plant-notes');
+  if (seedEl) seedEl.value = clean;
+  if (notesEl && !notesEl.value.includes(clean)) {
+    notesEl.value = [notesEl.value.trim(), `Seed package scan: ${clean}`].filter(Boolean).join('\n');
+  }
+  const applied = applyGuideToForm(clean);
+  if (!applied) showToast('📦', 'Package code saved', 'No plant match found, but the scan was stored.');
+}
+
+async function startBarcodeScan() {
+  const panel = document.getElementById('scanner-panel');
+  const video = document.getElementById('barcode-video');
+  if (!panel || !video) return;
+
+  if (!('BarcodeDetector' in globalThis)) {
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    setScannerStatus('This browser cannot read barcodes directly yet. Enter the code manually, or try Chrome/Edge on a supported phone.');
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    setScannerStatus('Camera access is not available in this browser. Enter the code manually.');
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  panel.setAttribute('aria-hidden', 'false');
+  setScannerStatus('Starting camera...');
+
+  try {
+    const desired = ['qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
+    const supported = typeof BarcodeDetector.getSupportedFormats === 'function'
+      ? await BarcodeDetector.getSupportedFormats()
+      : desired;
+    const formats = desired.filter(format => supported.includes(format));
+    const detector = new BarcodeDetector({ formats: formats.length ? formats : desired });
+    barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = barcodeStream;
+    await video.play();
+    setScannerStatus('Scanning... hold the package steady in good light.');
+
+    const scan = async () => {
+      if (!barcodeStream) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length && codes[0].rawValue) {
+          const value = codes[0].rawValue;
+          stopBarcodeScan();
+          applyScannedSeedCode(value);
+          return;
+        }
+      } catch (error) {
+        setScannerStatus('Scanner had trouble reading the package. Try again or enter the code manually.');
+      }
+      barcodeScanTimer = window.setTimeout(scan, 350);
+    };
+    scan();
+  } catch (error) {
+    stopBarcodeScan(false);
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    setScannerStatus('Camera permission was not available. Enter the code manually.');
+  }
+}
+
+function stopBarcodeScan(hidePanel = true) {
+  if (barcodeScanTimer) {
+    clearTimeout(barcodeScanTimer);
+    barcodeScanTimer = null;
+  }
+  if (barcodeStream) {
+    barcodeStream.getTracks().forEach(track => track.stop());
+    barcodeStream = null;
+  }
+  const video = document.getElementById('barcode-video');
+  if (video) video.srcObject = null;
+  const panel = document.getElementById('scanner-panel');
+  if (panel && hidePanel) {
+    panel.classList.add('hidden');
+    panel.setAttribute('aria-hidden', 'true');
+  }
+  setScannerStatus('Camera is off.');
 }
 
 function hasSelectedCoordinates() {
@@ -1946,6 +2211,7 @@ function renderDetail() {
         <div class="vital-tile"><div class="vital-emoji">☀️</div><div class="vital-value">${escapeHtml(p.sun || 'Set later')}</div><div class="vital-label">happy place</div></div>
         <div class="vital-tile"><div class="vital-emoji">🌿</div><div class="vital-value">${escapeHtml(p.feed || 'Set later')}</div><div class="vital-label">till feeding</div></div>
       </div>
+      ${smartAdviceHtml(p)}
       <div class="care-plan-card detail-plan">
         <div class="care-plan-title">Care Plan</div>
         <div class="care-plan-sub">The next few things Brittany should watch for.</div>
@@ -2050,6 +2316,68 @@ function logCare(plantId, type) {
   if (state.scr === 'journal') renderJournal();
 }
 
+async function askAiAdvice(plantId) {
+  const p = state.plants.find(x => x.id === plantId);
+  if (!p) return;
+  const endpoint = String(state.settings.aiEndpoint || '').trim();
+  if (!endpoint) {
+    p.aiAdvice = 'AI needs a private helper URL in Setup before it can answer. The app will not expose an API key in the browser.';
+    p.aiAdviceStatus = 'missing';
+    renderDetail();
+    showToast('🔒', 'AI needs setup', 'Add a private AI helper URL in Setup.');
+    return;
+  }
+
+  p.aiAdviceStatus = 'loading';
+  renderDetail();
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        today: dateKey(new Date()),
+        plant: {
+          name: p.name,
+          kind: p.kind,
+          seedCode: p.seedCode || '',
+          planter: p.planter,
+          status: p.status,
+          water: p.water,
+          feed: p.feed,
+          harvestCue: p.harvestCue || p.harvest || '',
+          notes: p.notes || ''
+        },
+        garden: {
+          name: state.settings.garden,
+          location: state.settings.location,
+          latitude: state.settings.latitude,
+          longitude: state.settings.longitude
+        },
+        weather: state.weather.status === 'ready' ? state.weather : null,
+        guide: smartAdviceItems(p)
+      })
+    });
+    if (!response.ok) throw new Error('AI helper request failed');
+    const data = await response.json();
+    const text = Array.isArray(data.items)
+      ? data.items.join('\n')
+      : data.advice || data.text || data.message || '';
+    if (!text) throw new Error('AI helper returned no advice');
+    p.aiAdvice = String(text).slice(0, 1200);
+    p.aiAdviceAt = new Date().toISOString();
+    p.aiAdviceStatus = 'ready';
+    saveState();
+    renderDetail();
+    showToast('✨', 'AI advice ready', 'Private helper returned guidance.');
+  } catch (error) {
+    p.aiAdvice = 'AI helper did not respond. Check the private endpoint URL in Setup.';
+    p.aiAdviceStatus = 'error';
+    renderDetail();
+    showToast('!', 'AI unavailable', 'Check the helper URL.');
+  }
+}
+
 // ============================
 // TOAST
 // ============================
@@ -2101,6 +2429,7 @@ function savePlantFromForm(event) {
 
   plant.name = name;
   plant.kind = kind;
+  plant.seedCode = document.getElementById('plant-seed-code').value.trim();
   plant.planter = document.getElementById('plant-planter').value.trim();
   plant.status = status;
   plant.water = waterCadence.text;
@@ -2178,6 +2507,10 @@ document.addEventListener('click', event => {
   if (action === 'edit-plant') openPlantForm(button.dataset.id);
   if (action === 'delete-plant') deletePlant(button.dataset.id);
   if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
+  if (action === 'start-barcode-scan') startBarcodeScan();
+  if (action === 'stop-barcode-scan') stopBarcodeScan();
+  if (action === 'use-knowledge') applyGuideToForm();
+  if (action === 'ask-ai') askAiAdvice(button.dataset.id);
   if (action === 'search-location') searchLocation();
   if (action === 'select-location') selectLocation(button);
   if (action === 'refresh-weather') fetchWeather();
@@ -2208,6 +2541,7 @@ document.querySelectorAll('.setting-input').forEach(input => {
   input.addEventListener('input', () => {
     state.settings.gardener = document.getElementById('setting-gardener').value.trim() || 'Brittany';
     state.settings.garden = document.getElementById('setting-garden').value.trim() || 'My Garden';
+    state.settings.aiEndpoint = document.getElementById('setting-ai-endpoint').value.trim();
     state.settings.locationQuery = document.getElementById('setting-location-search').value.trim();
     if (input.id === 'setting-location-search' && state.settings.locationQuery !== state.settings.location) {
       state.settings.location = '';

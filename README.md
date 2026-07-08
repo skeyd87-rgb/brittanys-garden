@@ -10,6 +10,9 @@ The current build is a static mobile web app that can be added to a phone home s
 
 - Blank-slate first run
 - Add and edit plants
+- Seed package barcode / QR capture with manual fallback
+- Built-in plant guide presets for common container plants
+- Private AI helper hook via configurable endpoint
 - Per-plant care directions for watering, feeding, and harvest cues
 - Repeat-aware due dates from notes like "in 3 days" plus plant and garden-wide 7-day calendars
 - Selectable location search
@@ -29,6 +32,12 @@ The current build is a static mobile web app that can be added to a phone home s
 
 The current PWA tracks care inside the app. It does not send phone push notifications yet.
 - Local saved care state
+
+## Barcode and AI Limits
+
+Barcode scanning uses the browser's native BarcodeDetector API when available. Browser support is uneven, so the app also lets Brittany type the package code manually.
+
+AI advice is not called directly from the public GitHub Pages app. A private helper endpoint is required so an AI API key is never exposed in browser code.
 
 ## Weather Source
 

@@ -767,7 +767,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">2. Use Today for care</div>
-          <div class="empty-sub" style="text-align:left">Today starts with a Care Plan, then shows plants that need water, trimming, or harvesting. Mark care when it is done.</div>
+          <div class="empty-sub" style="text-align:left">Today starts with a Care Plan and an all-plant 7-day calendar, then shows plants that need water, trimming, feeding, or harvesting. Mark care when it is done.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">3. Use Care Board for the overview</div>
@@ -779,7 +779,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">5. Add plant directions</div>
-          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Date-like notes such as "in 3 days" become real due dates in the Care Plan and 7-day calendar.</div>
+          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Date-like notes such as "in 3 days" become repeat frames, so watering every 3 days keeps rolling forward after Brittany logs it.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Add to phone home screen</div>
@@ -851,6 +851,7 @@ function hydrateState() {
     if (Array.isArray(saved.journal)) state.journal = saved.journal;
     if (Number.isFinite(saved.streak)) state.streak = saved.streak;
     state.plants.forEach(normalizePlantCare);
+    saveState();
   } catch (error) {
     localStorage.removeItem(storageKey);
   }
@@ -972,18 +973,56 @@ function parseCareDueDate(text, baseDate) {
   return null;
 }
 
+function parseCareRepeat(text) {
+  const raw = String(text || '').trim().toLowerCase();
+  if (!raw) return null;
+  if (/\bdaily\b|\bevery day\b/.test(raw)) return { count: 1, unit: 'day', label: 'Every day' };
+  if (/\bweekly\b|\bevery week\b/.test(raw)) return { count: 1, unit: 'week', label: 'Every week' };
+
+  let match = raw.match(/\bevery\s+(\d+)\s*(day|days|d)\b/);
+  if (match) return { count: Number(match[1]), unit: 'day', label: `Every ${Number(match[1])} days` };
+
+  match = raw.match(/\bevery\s+(\d+)\s*(week|weeks|w)\b/);
+  if (match) return { count: Number(match[1]), unit: 'week', label: `Every ${Number(match[1])} weeks` };
+
+  match = raw.match(/(?:in\s*)?(\d+)\s*(day|days|d)\b/);
+  if (match) return { count: Number(match[1]), unit: 'day', label: `Every ${Number(match[1])} days` };
+
+  match = raw.match(/(?:in\s*)?(\d+)\s*(week|weeks|w)\b/);
+  if (match) return { count: Number(match[1]), unit: 'week', label: `Every ${Number(match[1])} weeks` };
+
+  return null;
+}
+
+function repeatDays(repeat) {
+  if (!repeat || !Number.isFinite(Number(repeat.count))) return null;
+  return repeat.unit === 'week' ? Number(repeat.count) * 7 : Number(repeat.count);
+}
+
+function repeatLabel(repeat) {
+  return repeat?.label || '';
+}
+
+function dueDateFromRepeat(repeat, baseDate) {
+  const days = repeatDays(repeat);
+  if (!days) return null;
+  return dateKey(addDays(baseDate || new Date(), days));
+}
+
 function careEntry(existing, key, text, now) {
   const value = String(text || '').trim();
   const previous = existing?.care?.[key];
   const nowIso = now.toISOString();
+  const repeat = parseCareRepeat(value);
   if (previous && previous.text === value) {
-    return { ...previous, updatedAt: nowIso };
+    return { ...previous, repeat: previous.repeat || repeat, dueAt: previous.dueAt || dueDateFromRepeat(previous.repeat || repeat, now), updatedAt: nowIso };
   }
   return {
     text: value,
     createdAt: nowIso,
     updatedAt: nowIso,
-    dueAt: parseCareDueDate(value, now)
+    dueAt: parseCareDueDate(value, now) || dueDateFromRepeat(repeat, now),
+    repeat
   };
 }
 
@@ -997,8 +1036,14 @@ function normalizePlantCare(plant) {
         text: plant[key] || '',
         createdAt: plant.createdAt || plant.updatedAt || now.toISOString(),
         updatedAt: plant.updatedAt || plant.createdAt || now.toISOString(),
-        dueAt: parseCareDueDate(plant[key] || '', now)
+        dueAt: parseCareDueDate(plant[key] || '', now) || dueDateFromRepeat(parseCareRepeat(plant[key] || ''), now),
+        repeat: parseCareRepeat(plant[key] || '')
       };
+    } else if (plant.care[key] && plant.care[key].repeat === undefined) {
+      plant.care[key].repeat = parseCareRepeat(plant.care[key].text || plant[key] || '');
+      plant.care[key].dueAt = plant.care[key].dueAt || dueDateFromRepeat(plant.care[key].repeat, now);
+    } else if (plant.care[key] && !plant.care[key].dueAt) {
+      plant.care[key].dueAt = parseCareDueDate(plant.care[key].text || plant[key] || '', now) || dueDateFromRepeat(plant.care[key].repeat, now);
     }
   });
 }
@@ -1006,7 +1051,8 @@ function normalizePlantCare(plant) {
 function careTiming(entry, noDueText) {
   if (!entry || !entry.text) return 'No plan set yet';
   const due = entry.dueAt ? `Due ${formatShortDate(entry.dueAt)}` : (noDueText || 'Due date not set');
-  return `Set ${formatStamp(entry.createdAt)} · ${due}`;
+  const repeat = repeatLabel(entry.repeat);
+  return `Set ${formatStamp(entry.createdAt)} · ${due}${repeat ? ` · Repeats ${repeat.toLowerCase()}` : ''}`;
 }
 
 function isDue(entry) {
@@ -1183,21 +1229,51 @@ function nextSevenDays() {
   return Array.from({ length: 7 }, (_, index) => addDays(today, index));
 }
 
+function eventDatesForEntry(entry, days) {
+  if (!entry?.dueAt) return [];
+  const dayKeys = days.map(dateKey);
+  const firstVisible = dayKeys[0];
+  const lastVisible = dayKeys[dayKeys.length - 1];
+  const dates = [];
+  let current = dateFromKey(entry.dueAt);
+  const step = repeatDays(entry.repeat);
+  if (!current) return dates;
+
+  if (step) {
+    while (dateKey(current) < firstVisible) {
+      current = addDays(current, step);
+    }
+  }
+
+  while (dateKey(current) <= lastVisible) {
+    const key = dateKey(current);
+    if (key >= firstVisible) dates.push(key);
+    if (!step) break;
+    current = addDays(current, step);
+  }
+
+  return dates;
+}
+
 function calendarEvents(p) {
   normalizePlantCare(p);
   const events = [];
   const seen = new Set();
-  function add(type, emoji, label, dueAt) {
+  const days = nextSevenDays();
+  function add(type, emoji, label, dueAt, plantName) {
     if (!dueAt) return;
-    const key = `${type}-${dueAt}`;
+    const key = `${p.id}-${type}-${dueAt}`;
     if (seen.has(key)) return;
     seen.add(key);
-    events.push({ type, emoji, label, dueAt });
+    events.push({ type, emoji, label, dueAt, plantName: plantName || p.name });
+  }
+  function addEntry(type, emoji, label, entry) {
+    eventDatesForEntry(entry, days).forEach(dueAt => add(type, emoji, label, dueAt));
   }
 
-  add('water', '💧', 'Water', p.care.water?.dueAt);
-  add('feed', '🌿', 'Feed', p.care.feed?.dueAt);
-  add('harvest', '🧺', p.status === 'trim' ? 'Trim' : 'Harvest', p.care.harvest?.dueAt);
+  addEntry('water', '💧', 'Water', p.care.water);
+  addEntry('feed', '🌿', 'Feed', p.care.feed);
+  addEntry('harvest', '🧺', p.status === 'trim' ? 'Trim' : 'Harvest', p.care.harvest);
 
   const today = dateKey(new Date());
   if (p.status === 'thirsty') add('water-status', '💧', 'Water today', today);
@@ -1205,6 +1281,32 @@ function calendarEvents(p) {
   if (p.status === 'harvest') add('harvest-status', '🧺', 'Harvest today', today);
 
   return events;
+}
+
+function allCalendarEvents() {
+  return state.plants.flatMap(p => calendarEvents(p).map(event => ({ ...event, plantId: p.id, plantName: p.name })));
+}
+
+function gardenCalendarHtml() {
+  if (!state.plants.length) return '';
+  const days = nextSevenDays();
+  const events = allCalendarEvents();
+  return `<div class="plant-calendar garden-calendar">
+    <div class="calendar-title">7-Day Garden Calendar</div>
+    <div class="calendar-sub">All planned care across every plant.</div>
+    <div class="calendar-grid">
+      ${days.map(day => {
+        const key = dateKey(day);
+        const dayEvents = events.filter(event => event.dueAt === key);
+        return `<div class="calendar-day ${key === dateKey(new Date()) ? 'today' : ''}">
+          <div class="calendar-weekday">${day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+          <div class="calendar-date">${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+          ${dayEvents.length ? dayEvents.slice(0, 4).map(event => `<div class="calendar-event">${event.emoji} ${escapeHtml(event.plantName)} · ${escapeHtml(event.label)}</div>`).join('') : '<div class="calendar-empty">No planned care</div>'}
+          ${dayEvents.length > 4 ? `<div class="calendar-empty">+${dayEvents.length - 4} more</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
 }
 
 function plantCalendarHtml(p) {
@@ -1540,7 +1642,7 @@ function renderToday() {
   badge.style.display = remaining === 0 ? 'none' : '';
 
   const grid = document.getElementById('task-grid');
-  let html = todayPlanHtml();
+  let html = todayPlanHtml() + gardenCalendarHtml();
 
   if (state.plants.length === 0) {
     grid.innerHTML = `<div class="empty-state">

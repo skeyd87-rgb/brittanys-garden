@@ -182,6 +182,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .care-plan-card {
   grid-column: 1 / -1; background: #fffdf7; border-radius: 22px; padding: 18px;
   box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc;
+  min-width: 0; max-width: 100%;
 }
 .care-plan-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 20px; color: #33442f; }
 .care-plan-sub { font-size: 13px; color: #8a8270; font-weight: 700; margin-top: 2px; }
@@ -189,14 +190,16 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .care-plan-row {
   display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start;
   background: #f8f4eb; border-radius: 14px; padding: 11px 12px;
+  min-width: 0;
 }
+.care-plan-row > div:last-child { min-width: 0; }
 .care-plan-emoji { font-size: 21px; text-align: center; line-height: 1.2; }
-.care-plan-main { font-size: 14px; font-weight: 800; color: #33442f; line-height: 1.25; }
-.care-plan-note { font-size: 12px; font-weight: 700; color: #7c735f; margin-top: 2px; line-height: 1.35; }
-.plant-calendar { margin-top: 16px; background: #fffdf7; border-radius: 22px; padding: 18px; box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc; }
+.care-plan-main { font-size: 14px; font-weight: 800; color: #33442f; line-height: 1.25; overflow-wrap: anywhere; }
+.care-plan-note { font-size: 12px; font-weight: 700; color: #7c735f; margin-top: 2px; line-height: 1.35; overflow-wrap: anywhere; }
+.plant-calendar { margin-top: 16px; background: #fffdf7; border-radius: 22px; padding: 18px; box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc; min-width: 0; max-width: 100%; }
 .calendar-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 20px; color: #33442f; }
 .calendar-sub { font-size: 13px; color: #8a8270; font-weight: 700; margin-top: 2px; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(76px, 1fr)); gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(76px, 1fr)); gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; width: 100%; max-width: 100%; }
 .calendar-day { min-height: 104px; border-radius: 16px; background: #f8f4eb; padding: 10px; border: 1px solid #ebe2d1; }
 .calendar-day.today { background: #e7efdd; border-color: #cdddbf; }
 .calendar-weekday { font-size: 11px; color: #8a8270; font-weight: 900; text-transform: uppercase; }
@@ -377,6 +380,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   font: 700 14px 'Nunito', sans-serif;
 }
 .field textarea { min-height: 82px; resize: vertical; }
+.cadence-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.cadence-row select { min-width: 0; }
 .setting-input { max-width: 230px; text-align: right; }
 .location-picker { width: min(360px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
 .location-search-row { display: flex; gap: 8px; }
@@ -659,20 +664,94 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
               </select>
             </div>
             <div class="field">
-              <label for="plant-water">Water again</label>
-              <input id="plant-water" autocomplete="off" placeholder="In 3 days">
+              <label for="plant-water-count">Water every</label>
+              <div class="cadence-row">
+                <select id="plant-water-count" aria-label="Water every number of days or weeks">
+                  <option value="">Choose</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                </select>
+                <select id="plant-water-unit" aria-label="Water cadence">
+                  <option value="day">days</option>
+                  <option value="week">weeks</option>
+                </select>
+              </div>
             </div>
             <div class="field">
               <label for="plant-sun">Sun</label>
               <input id="plant-sun" autocomplete="off" placeholder="Full sun">
             </div>
             <div class="field">
-              <label for="plant-feed">Feed</label>
-              <input id="plant-feed" autocomplete="off" placeholder="In 10 days">
+              <label for="plant-feed-count">Feed every</label>
+              <div class="cadence-row">
+                <select id="plant-feed-count" aria-label="Feed every number of days or weeks">
+                  <option value="">No schedule</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="21">21</option>
+                  <option value="30">30</option>
+                </select>
+                <select id="plant-feed-unit" aria-label="Feed cadence">
+                  <option value="day">days</option>
+                  <option value="week">weeks</option>
+                </select>
+              </div>
             </div>
             <div class="field">
-              <label for="plant-harvest">Harvest cue</label>
-              <input id="plant-harvest" autocomplete="off" placeholder="Pick when red">
+              <label for="plant-harvest-count">Check harvest every</label>
+              <div class="cadence-row">
+                <select id="plant-harvest-count" aria-label="Check harvest every number of days or weeks">
+                  <option value="">No schedule</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="21">21</option>
+                  <option value="30">30</option>
+                </select>
+                <select id="plant-harvest-unit" aria-label="Harvest check cadence">
+                  <option value="day">days</option>
+                  <option value="week">weeks</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="plant-harvest-cue">Harvest cue</label>
+              <input id="plant-harvest-cue" autocomplete="off" placeholder="Pick when red">
             </div>
             <div class="field field-full">
               <label for="plant-notes">Notes</label>
@@ -763,7 +842,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px;margin-bottom:24px">The quick version for using Brittany's Garden.</div>
         <div class="setup-card">
           <div class="setup-card-title">1. Add the first plant</div>
-          <div class="empty-sub" style="text-align:left">Go to Planters, tap Add a plant, then save its name, type, planter, care status, and notes.</div>
+          <div class="empty-sub" style="text-align:left">Go to Planters, tap Add a plant, then save its name, type, planter, care status, and optional notes.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">2. Use Today for care</div>
@@ -779,7 +858,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">5. Add plant directions</div>
-          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Date-like notes such as "in 3 days" become repeat frames, so watering every 3 days keeps rolling forward after Brittany logs it.</div>
+          <div class="empty-sub" style="text-align:left">When adding or editing a plant, choose Water every, Feed every, and Check harvest every from the dropdowns. Add a Harvest cue such as "pick when red" so Brittany knows what to look for. Each completed action rolls the next date forward from the day it is logged.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Add to phone home screen</div>
@@ -994,6 +1073,37 @@ function parseCareRepeat(text) {
   return null;
 }
 
+function normalizeRepeat(repeat) {
+  if (!repeat) return null;
+  const count = Number(repeat.count);
+  const unit = repeat.unit === 'week' ? 'week' : 'day';
+  if (!Number.isFinite(count) || count < 1) return null;
+  return {
+    count,
+    unit,
+    label: `Every ${count} ${unit}${count === 1 ? '' : 's'}`
+  };
+}
+
+function readCadence(prefix) {
+  const count = Number(document.getElementById(`${prefix}-count`)?.value || 0);
+  const unit = document.getElementById(`${prefix}-unit`)?.value === 'week' ? 'week' : 'day';
+  const repeat = normalizeRepeat({ count, unit });
+  return {
+    repeat,
+    text: repeat ? repeat.label : ''
+  };
+}
+
+function setCadenceControls(prefix, text, repeat) {
+  const countEl = document.getElementById(`${prefix}-count`);
+  const unitEl = document.getElementById(`${prefix}-unit`);
+  if (!countEl || !unitEl) return;
+  const parsed = normalizeRepeat(repeat) || normalizeRepeat(parseCareRepeat(text));
+  countEl.value = parsed ? String(parsed.count) : '';
+  unitEl.value = parsed?.unit || 'day';
+}
+
 function repeatDays(repeat) {
   if (!repeat || !Number.isFinite(Number(repeat.count))) return null;
   return repeat.unit === 'week' ? Number(repeat.count) * 7 : Number(repeat.count);
@@ -1009,11 +1119,11 @@ function dueDateFromRepeat(repeat, baseDate) {
   return dateKey(addDays(baseDate || new Date(), days));
 }
 
-function careEntry(existing, key, text, now) {
+function careEntry(existing, key, text, now, forcedRepeat) {
   const value = String(text || '').trim();
   const previous = existing?.care?.[key];
   const nowIso = now.toISOString();
-  const repeat = parseCareRepeat(value);
+  const repeat = normalizeRepeat(forcedRepeat) || normalizeRepeat(parseCareRepeat(value));
   if (previous && previous.text === value) {
     return { ...previous, repeat: previous.repeat || repeat, dueAt: previous.dueAt || dueDateFromRepeat(previous.repeat || repeat, now), updatedAt: nowIso };
   }
@@ -1030,6 +1140,7 @@ function normalizePlantCare(plant) {
   if (!plant || typeof plant !== 'object') return;
   const now = new Date();
   plant.care = plant.care || {};
+  if (!plant.harvestCue && plant.harvest && !parseCareRepeat(plant.harvest)) plant.harvestCue = plant.harvest;
   ['water', 'feed', 'harvest'].forEach(key => {
     if (!plant.care[key]) {
       plant.care[key] = {
@@ -1037,10 +1148,10 @@ function normalizePlantCare(plant) {
         createdAt: plant.createdAt || plant.updatedAt || now.toISOString(),
         updatedAt: plant.updatedAt || plant.createdAt || now.toISOString(),
         dueAt: parseCareDueDate(plant[key] || '', now) || dueDateFromRepeat(parseCareRepeat(plant[key] || ''), now),
-        repeat: parseCareRepeat(plant[key] || '')
+        repeat: normalizeRepeat(parseCareRepeat(plant[key] || ''))
       };
     } else if (plant.care[key] && plant.care[key].repeat === undefined) {
-      plant.care[key].repeat = parseCareRepeat(plant.care[key].text || plant[key] || '');
+      plant.care[key].repeat = normalizeRepeat(parseCareRepeat(plant.care[key].text || plant[key] || ''));
       plant.care[key].dueAt = plant.care[key].dueAt || dueDateFromRepeat(plant.care[key].repeat, now);
     } else if (plant.care[key] && !plant.care[key].dueAt) {
       plant.care[key].dueAt = parseCareDueDate(plant.care[key].text || plant[key] || '', now) || dueDateFromRepeat(plant.care[key].repeat, now);
@@ -1114,15 +1225,22 @@ function carePlanItems(p) {
   const waterEntry = p.care.water;
   const feedEntry = p.care.feed;
   const harvestEntry = p.care.harvest;
-  const water = waterEntry.text || 'Set a watering target, like "in 3 days".';
-  const feed = feedEntry.text || 'Add a feeding cadence if this plant needs it.';
-  const harvest = harvestEntry.text || (
+  const water = waterEntry.text || 'Choose a watering cadence.';
+  const feed = feedEntry.text || 'Choose a feeding cadence if this plant needs it.';
+  const harvestCue = p.harvestCue || (p.harvest && !parseCareRepeat(p.harvest) ? p.harvest : '');
+  const harvestFallback = (
     p.status === 'harvest'
       ? 'Harvest what is ready today.'
       : p.status === 'trim'
       ? 'Trim or pinch back today, then set the next trim cue.'
-      : 'Add a harvest cue, like "pick when red" or "cut outer leaves".'
+      : 'Add a harvest cue, like "pick when red", and a check cadence.'
   );
+  const harvest = harvestCue || harvestEntry.text || harvestFallback;
+  const harvestMain = p.status === 'harvest' || isDue(harvestEntry)
+    ? `Harvest ${p.name} today`
+    : harvestEntry.text
+    ? `Check harvest: ${harvest}`
+    : `Harvest cue: ${harvest}`;
 
   return [
     {
@@ -1136,8 +1254,8 @@ function carePlanItems(p) {
       emoji: p.status === 'harvest' ? '🧺' : '✂️',
       type: p.status === 'trim' ? 'trim' : 'harvest',
       dueAt: harvestEntry.dueAt,
-      main: p.status === 'harvest' || isDue(harvestEntry) ? `Harvest ${p.name} today` : `Harvest cue: ${harvest}`,
-      note: `${careTiming(harvestEntry, harvestEntry.text ? `Cue: ${harvestEntry.text}` : 'Due by visible cue')}. ${p.status === 'trim' ? meta.msg : 'Use this as the visible sign Brittany should look for.'}`
+      main: harvestMain,
+      note: `${careTiming(harvestEntry, harvestCue ? `Cue: ${harvestCue}` : 'Due by visible cue')}. ${p.status === 'trim' ? meta.msg : 'Use this as the visible sign Brittany should look for.'}`
     },
     {
       emoji: '🌿',
@@ -1346,16 +1464,18 @@ function plantBlurb(p) {
 function openPlantForm(id) {
   const form = document.getElementById('plant-form');
   const plant = state.plants.find(p => p.id === id);
+  if (plant) normalizePlantCare(plant);
   document.getElementById('plant-form-title').textContent = plant ? '✏️ Edit plant' : '🌱 Add a plant';
   document.getElementById('plant-id').value = plant?.id || '';
   document.getElementById('plant-name').value = plant?.name || '';
   document.getElementById('plant-kind').value = plant?.kind || '';
   document.getElementById('plant-planter').value = plant?.planter || '';
   document.getElementById('plant-status').value = plant?.status || 'happy';
-  document.getElementById('plant-water').value = plant?.water || '';
+  setCadenceControls('plant-water', plant?.care?.water?.text || plant?.water || '', plant?.care?.water?.repeat);
   document.getElementById('plant-sun').value = plant?.sun || '';
-  document.getElementById('plant-feed').value = plant?.feed || '';
-  document.getElementById('plant-harvest').value = plant?.harvest || '';
+  setCadenceControls('plant-feed', plant?.care?.feed?.text || plant?.feed || '', plant?.care?.feed?.repeat);
+  setCadenceControls('plant-harvest', plant?.care?.harvest?.text || '', plant?.care?.harvest?.repeat);
+  document.getElementById('plant-harvest-cue').value = plant?.harvestCue || (plant?.harvest && !parseCareRepeat(plant.harvest) ? plant.harvest : '') || '';
   document.getElementById('plant-notes').value = plant?.notes || '';
   form.classList.remove('hidden');
   navigate('planters');
@@ -1912,6 +2032,10 @@ function logCare(plantId, type) {
     p.care.feed = careEntry(null, 'feed', p.care.feed.text, now);
     p.feed = p.care.feed.text;
   }
+  if ((type === 'pick' || type === 'trim') && p.care.harvest?.text) {
+    p.care.harvest = careEntry(null, 'harvest', p.care.harvest.text, now);
+    p.harvestSchedule = p.care.harvest.text;
+  }
   p.updatedAt = nowIso;
   state.streak = Math.max(1, state.streak || 0);
   state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), at: nowIso, dot: dotColor(type), type });
@@ -1965,6 +2089,9 @@ function savePlantFromForm(event) {
   const existing = state.plants.find(p => p.id === id);
   const now = new Date();
   const nowIso = now.toISOString();
+  const waterCadence = readCadence('plant-water');
+  const feedCadence = readCadence('plant-feed');
+  const harvestCadence = readCadence('plant-harvest');
   const plant = existing || {
     id: `plant-${Date.now()}`,
     mood: '😊',
@@ -1976,16 +2103,21 @@ function savePlantFromForm(event) {
   plant.kind = kind;
   plant.planter = document.getElementById('plant-planter').value.trim();
   plant.status = status;
-  plant.water = document.getElementById('plant-water').value.trim();
+  plant.water = waterCadence.text;
+  plant.waterCadence = waterCadence.repeat;
   plant.sun = document.getElementById('plant-sun').value.trim();
-  plant.feed = document.getElementById('plant-feed').value.trim();
-  plant.harvest = document.getElementById('plant-harvest').value.trim();
+  plant.feed = feedCadence.text;
+  plant.feedCadence = feedCadence.repeat;
+  plant.harvestCue = document.getElementById('plant-harvest-cue').value.trim();
+  plant.harvest = plant.harvestCue;
+  plant.harvestSchedule = harvestCadence.text;
+  plant.harvestCadence = harvestCadence.repeat;
   plant.notes = document.getElementById('plant-notes').value.trim();
   plant.updatedAt = nowIso;
   plant.care = {
-    water: careEntry(existing, 'water', plant.water, now),
-    feed: careEntry(existing, 'feed', plant.feed, now),
-    harvest: careEntry(existing, 'harvest', plant.harvest, now)
+    water: careEntry(existing, 'water', plant.water, now, waterCadence.repeat),
+    feed: careEntry(existing, 'feed', plant.feed, now, feedCadence.repeat),
+    harvest: careEntry(existing, 'harvest', harvestCadence.text, now, harvestCadence.repeat)
   };
   plant.emoji = plantEmoji(kind, status);
   plant.mood = status === 'happy' ? '😊' : status === 'harvest' ? '😋' : status === 'trim' ? '😄' : '🙂';

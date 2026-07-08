@@ -11,6 +11,7 @@ The current build is a static mobile web app that can be added to a phone home s
 - Blank-slate first run
 - Add and edit plants
 - Per-plant care directions for watering, feeding, and harvest cues
+- Date-aware due dates from notes like "in 3 days" plus a 7-day plant calendar
 - Selectable location search
 - Live current weather for the selected location via Open-Meteo
 - Today view

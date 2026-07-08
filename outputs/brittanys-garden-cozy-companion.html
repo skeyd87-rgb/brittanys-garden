@@ -193,6 +193,16 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .care-plan-emoji { font-size: 21px; text-align: center; line-height: 1.2; }
 .care-plan-main { font-size: 14px; font-weight: 800; color: #33442f; line-height: 1.25; }
 .care-plan-note { font-size: 12px; font-weight: 700; color: #7c735f; margin-top: 2px; line-height: 1.35; }
+.plant-calendar { margin-top: 16px; background: #fffdf7; border-radius: 22px; padding: 18px; box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc; }
+.calendar-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 20px; color: #33442f; }
+.calendar-sub { font-size: 13px; color: #8a8270; font-weight: 700; margin-top: 2px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(76px, 1fr)); gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
+.calendar-day { min-height: 104px; border-radius: 16px; background: #f8f4eb; padding: 10px; border: 1px solid #ebe2d1; }
+.calendar-day.today { background: #e7efdd; border-color: #cdddbf; }
+.calendar-weekday { font-size: 11px; color: #8a8270; font-weight: 900; text-transform: uppercase; }
+.calendar-date { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 18px; color: #33442f; line-height: 1; margin-top: 2px; }
+.calendar-event { margin-top: 8px; border-radius: 10px; background: #fffdf7; padding: 7px; font-size: 11px; font-weight: 800; color: #4d7040; line-height: 1.25; }
+.calendar-empty { margin-top: 12px; font-size: 11px; color: #a59a82; font-weight: 800; }
 .task-btn {
   margin-top: 14px; width: 100%; border: none; border-radius: 14px; padding: 11px;
   font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
@@ -500,6 +510,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .task-grid, .board-grid, .roster-grid, .journal-stats, .vitals-grid {
     grid-template-columns: 1fr;
   }
+  .calendar-grid { grid-template-columns: repeat(7, 76px); }
   .task-card, .happy-card, .setup-card { border-radius: 20px; }
   .board-grid { gap: 12px; margin-top: 16px; }
   .board-col { padding: 16px; }
@@ -768,7 +779,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">5. Add plant directions</div>
-          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Those become the directions Brittany sees in the Care Plan.</div>
+          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Date-like notes such as "in 3 days" become real due dates in the Care Plan and 7-day calendar.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Add to phone home screen</div>
@@ -839,6 +850,7 @@ function hydrateState() {
     if (Array.isArray(saved.plants)) state.plants = saved.plants;
     if (Array.isArray(saved.journal)) state.journal = saved.journal;
     if (Number.isFinite(saved.streak)) state.streak = saved.streak;
+    state.plants.forEach(normalizePlantCare);
   } catch (error) {
     localStorage.removeItem(storageKey);
   }
@@ -899,6 +911,108 @@ function todayLabel() {
   return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function startOfLocalDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, days) {
+  const copy = startOfLocalDay(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function dateKey(date) {
+  const day = startOfLocalDay(date);
+  const month = String(day.getMonth() + 1).padStart(2, '0');
+  const dateOfMonth = String(day.getDate()).padStart(2, '0');
+  return `${day.getFullYear()}-${month}-${dateOfMonth}`;
+}
+
+function dateFromKey(key) {
+  if (!key) return null;
+  const parts = String(key).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function formatShortDate(key) {
+  const date = dateFromKey(key);
+  if (!date) return 'No due date';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatStamp(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return 'Not stamped';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function parseCareDueDate(text, baseDate) {
+  const raw = String(text || '').trim().toLowerCase();
+  const base = startOfLocalDay(baseDate || new Date());
+  if (!raw) return null;
+  if (/\btoday\b/.test(raw)) return dateKey(base);
+  if (/\btomorrow\b/.test(raw)) return dateKey(addDays(base, 1));
+
+  let match = raw.match(/(?:in\s*)?(\d+)\s*(?:day|days|d)\b/);
+  if (match) return dateKey(addDays(base, Number(match[1])));
+
+  match = raw.match(/(?:in\s*)?(\d+)\s*(?:week|weeks|w)\b/);
+  if (match) return dateKey(addDays(base, Number(match[1]) * 7));
+
+  match = raw.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if (match) return dateKey(new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+
+  match = raw.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+  if (match) {
+    const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : base.getFullYear();
+    return dateKey(new Date(year, Number(match[1]) - 1, Number(match[2])));
+  }
+
+  return null;
+}
+
+function careEntry(existing, key, text, now) {
+  const value = String(text || '').trim();
+  const previous = existing?.care?.[key];
+  const nowIso = now.toISOString();
+  if (previous && previous.text === value) {
+    return { ...previous, updatedAt: nowIso };
+  }
+  return {
+    text: value,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    dueAt: parseCareDueDate(value, now)
+  };
+}
+
+function normalizePlantCare(plant) {
+  if (!plant || typeof plant !== 'object') return;
+  const now = new Date();
+  plant.care = plant.care || {};
+  ['water', 'feed', 'harvest'].forEach(key => {
+    if (!plant.care[key]) {
+      plant.care[key] = {
+        text: plant[key] || '',
+        createdAt: plant.createdAt || plant.updatedAt || now.toISOString(),
+        updatedAt: plant.updatedAt || plant.createdAt || now.toISOString(),
+        dueAt: parseCareDueDate(plant[key] || '', now)
+      };
+    }
+  });
+}
+
+function careTiming(entry, noDueText) {
+  if (!entry || !entry.text) return 'No plan set yet';
+  const due = entry.dueAt ? `Due ${formatShortDate(entry.dueAt)}` : (noDueText || 'Due date not set');
+  return `Set ${formatStamp(entry.createdAt)} · ${due}`;
+}
+
+function isDue(entry) {
+  return !!entry?.dueAt && entry.dueAt <= dateKey(new Date());
+}
+
 function statusMeta(status) {
   return {
     thirsty: {
@@ -949,10 +1063,14 @@ function statusMeta(status) {
 }
 
 function carePlanItems(p) {
+  normalizePlantCare(p);
   const meta = statusMeta(p.status);
-  const water = p.water || 'Set a watering target, like "in 3 days".';
-  const feed = p.feed || 'Add a feeding cadence if this plant needs it.';
-  const harvest = p.harvest || (
+  const waterEntry = p.care.water;
+  const feedEntry = p.care.feed;
+  const harvestEntry = p.care.harvest;
+  const water = waterEntry.text || 'Set a watering target, like "in 3 days".';
+  const feed = feedEntry.text || 'Add a feeding cadence if this plant needs it.';
+  const harvest = harvestEntry.text || (
     p.status === 'harvest'
       ? 'Harvest what is ready today.'
       : p.status === 'trim'
@@ -963,20 +1081,48 @@ function carePlanItems(p) {
   return [
     {
       emoji: '💧',
-      main: p.status === 'thirsty' ? `Water ${p.name} today` : `Water again: ${water}`,
-      note: p.status === 'thirsty' ? 'Check the top inch of soil first. If it is dry, water deeply.' : 'This should be the next planned drink, not a vague reminder.'
+      type: 'water',
+      dueAt: waterEntry.dueAt,
+      main: p.status === 'thirsty' || isDue(waterEntry) ? `Water ${p.name} today` : `Water again: ${water}`,
+      note: `${careTiming(waterEntry)}. ${p.status === 'thirsty' ? 'Check the top inch of soil first.' : 'This is the next planned drink.'}`
     },
     {
       emoji: p.status === 'harvest' ? '🧺' : '✂️',
-      main: p.status === 'harvest' ? `Harvest ${p.name} today` : `Harvest cue: ${harvest}`,
-      note: p.status === 'trim' ? meta.msg : p.harvest ? `Cue: ${p.harvest}` : 'Use this as the visible sign Brittany should look for.'
+      type: p.status === 'trim' ? 'trim' : 'harvest',
+      dueAt: harvestEntry.dueAt,
+      main: p.status === 'harvest' || isDue(harvestEntry) ? `Harvest ${p.name} today` : `Harvest cue: ${harvest}`,
+      note: `${careTiming(harvestEntry, harvestEntry.text ? `Cue: ${harvestEntry.text}` : 'Due by visible cue')}. ${p.status === 'trim' ? meta.msg : 'Use this as the visible sign Brittany should look for.'}`
     },
     {
       emoji: '🌿',
+      type: 'feed',
+      dueAt: feedEntry.dueAt,
       main: `Feed: ${feed}`,
-      note: 'Keep this simple unless the plant has a specific fertilizer schedule.'
+      note: `${careTiming(feedEntry)}. Keep this simple unless the plant has a specific fertilizer schedule.`
     }
   ];
+}
+
+function scheduledDueItems(p) {
+  normalizePlantCare(p);
+  return carePlanItems(p).filter(item => isDue({ dueAt: item.dueAt }));
+}
+
+function taskMeta(p) {
+  if (['thirsty', 'trim', 'harvest'].includes(p.status)) return statusMeta(p.status);
+  const due = scheduledDueItems(p)[0];
+  if (!due) return statusMeta(p.status);
+  if (due.type === 'water') {
+    return { ...statusMeta('thirsty'), pill: '💧 due', note: 'Water due', msg: `${formatShortDate(due.dueAt)} was the planned water day.`, btnLabel: '💧 Mark watered', actionType: 'water' };
+  }
+  if (due.type === 'feed') {
+    return { ...statusMeta('happy'), pill: '🌿 feed due', note: 'Feed due', msg: `${formatShortDate(due.dueAt)} was the planned feeding day.`, btnLabel: '🌿 Mark fed', actionType: 'feed' };
+  }
+  return { ...statusMeta('harvest'), pill: '🧺 due', note: 'Harvest due', msg: `${formatShortDate(due.dueAt)} was the planned harvest day.`, btnLabel: '🧺 Mark harvested', actionType: 'pick' };
+}
+
+function isTaskPlant(p) {
+  return ['thirsty', 'trim', 'harvest'].includes(p.status) || scheduledDueItems(p).length > 0;
 }
 
 function carePlanHtml(p, limit) {
@@ -1003,8 +1149,15 @@ function todayPlanHtml() {
     <div class="care-plan-sub">What Brittany should do next, based on the saved plan for each plant.</div>
     <div class="care-plan-list">
       ${ordered.map(p => {
-        const urgent = p.status === 'harvest' ? carePlanItems(p)[1] : p.status === 'trim' ? carePlanItems(p)[1] : carePlanItems(p)[0];
-        const main = p.status === 'thirsty'
+        const due = scheduledDueItems(p)[0];
+        const urgent = due || (p.status === 'harvest' ? carePlanItems(p)[1] : p.status === 'trim' ? carePlanItems(p)[1] : carePlanItems(p)[0]);
+        const main = due?.type === 'water'
+          ? `Water due ${formatShortDate(due.dueAt)}`
+          : due?.type === 'feed'
+          ? `Feed due ${formatShortDate(due.dueAt)}`
+          : due?.type === 'harvest'
+          ? `Harvest due ${formatShortDate(due.dueAt)}`
+          : p.status === 'thirsty'
           ? 'Water today'
           : p.status === 'harvest'
           ? 'Harvest today'
@@ -1019,6 +1172,55 @@ function todayPlanHtml() {
             <div class="care-plan-main">${escapeHtml(p.name)}: ${escapeHtml(main)}</div>
             <div class="care-plan-note">${escapeHtml(urgent.note)}</div>
           </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function nextSevenDays() {
+  const today = startOfLocalDay(new Date());
+  return Array.from({ length: 7 }, (_, index) => addDays(today, index));
+}
+
+function calendarEvents(p) {
+  normalizePlantCare(p);
+  const events = [];
+  const seen = new Set();
+  function add(type, emoji, label, dueAt) {
+    if (!dueAt) return;
+    const key = `${type}-${dueAt}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    events.push({ type, emoji, label, dueAt });
+  }
+
+  add('water', '💧', 'Water', p.care.water?.dueAt);
+  add('feed', '🌿', 'Feed', p.care.feed?.dueAt);
+  add('harvest', '🧺', p.status === 'trim' ? 'Trim' : 'Harvest', p.care.harvest?.dueAt);
+
+  const today = dateKey(new Date());
+  if (p.status === 'thirsty') add('water-status', '💧', 'Water today', today);
+  if (p.status === 'trim') add('trim-status', '✂️', 'Trim today', today);
+  if (p.status === 'harvest') add('harvest-status', '🧺', 'Harvest today', today);
+
+  return events;
+}
+
+function plantCalendarHtml(p) {
+  const days = nextSevenDays();
+  const events = calendarEvents(p);
+  return `<div class="plant-calendar">
+    <div class="calendar-title">7-Day Calendar</div>
+    <div class="calendar-sub">Upcoming care dates from Brittany&apos;s saved plan.</div>
+    <div class="calendar-grid">
+      ${days.map(day => {
+        const key = dateKey(day);
+        const dayEvents = events.filter(event => event.dueAt === key);
+        return `<div class="calendar-day ${key === dateKey(new Date()) ? 'today' : ''}">
+          <div class="calendar-weekday">${day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+          <div class="calendar-date">${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+          ${dayEvents.length ? dayEvents.map(event => `<div class="calendar-event">${event.emoji} ${escapeHtml(event.label)}</div>`).join('') : '<div class="calendar-empty">No planned care</div>'}
         </div>`;
       }).join('')}
     </div>
@@ -1313,7 +1515,8 @@ function navigate(scr, selId) {
 // RENDER TODAY
 // ============================
 function renderToday() {
-  const tasks = state.plants.filter(p => ['thirsty','trim','harvest'].includes(p.status));
+  state.plants.forEach(normalizePlantCare);
+  const tasks = state.plants.filter(isTaskPlant);
   const remaining = tasks.filter(p => !state.doneToday[p.id]).length;
   const weatherLine = state.weather.status === 'ready'
     ? `${state.settings.location || 'Your garden'} is ${weatherLabel(state.weather.code).toLowerCase()} right now.`
@@ -1350,7 +1553,7 @@ function renderToday() {
   }
 
   tasks.forEach(p => {
-    const meta = statusMeta(p.status);
+    const meta = taskMeta(p);
     if (state.doneToday[p.id]) {
       html += `<div class="task-card">
         <div class="task-done">
@@ -1377,7 +1580,7 @@ function renderToday() {
     }
   });
 
-  const happy = state.plants.filter(p => p.status === 'happy');
+  const happy = state.plants.filter(p => p.status === 'happy' && !isTaskPlant(p));
   if (happy.length > 0) {
     const names = happy.map(p => p.name).join(' & ');
     html += `<div class="happy-card">
@@ -1485,6 +1688,7 @@ function renderDetail() {
     navigate('planters');
     return;
   }
+  normalizePlantCare(p);
 
   const hasPhoto = !!PHOTOS[p.id];
   const plantJournal = state.journal.filter(e => e.who === p.name);
@@ -1525,6 +1729,7 @@ function renderDetail() {
         <div class="care-plan-sub">The next few things Brittany should watch for.</div>
         <div class="care-plan-list">${carePlanHtml(p)}</div>
       </div>
+      ${plantCalendarHtml(p)}
       <div class="log-buttons">
         <button class="task-btn task-btn-primary" type="button" data-action="log-care" data-id="${p.id}" data-care="water" style="flex:1">💧 Watered</button>
         <button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="feed" style="flex:1">🌿 Fed</button>
@@ -1578,6 +1783,9 @@ function renderJournal() {
 function logCare(plantId, type) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
+  normalizePlantCare(p);
+  const now = new Date();
+  const nowIso = now.toISOString();
 
   const verbs = {
     water: { text: `${p.name} got a refreshing drink`, emoji: '💧', title: 'All watered!',       sub: `${p.name} is one happy plant.` },
@@ -1594,8 +1802,17 @@ function logCare(plantId, type) {
     p.mood = '😊';
     p.moodText = 'all set';
   }
+  if (type === 'water' && p.care.water?.text) {
+    p.care.water = careEntry(null, 'water', p.care.water.text, now);
+    p.water = p.care.water.text;
+  }
+  if (type === 'feed' && p.care.feed?.text) {
+    p.care.feed = careEntry(null, 'feed', p.care.feed.text, now);
+    p.feed = p.care.feed.text;
+  }
+  p.updatedAt = nowIso;
   state.streak = Math.max(1, state.streak || 0);
-  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), dot: dotColor(type), type });
+  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), at: nowIso, dot: dotColor(type), type });
   saveState();
 
   showToast(v.emoji, v.title, v.sub);
@@ -1644,11 +1861,14 @@ function savePlantFromForm(event) {
   const kind = document.getElementById('plant-kind').value.trim();
   const status = document.getElementById('plant-status').value;
   const existing = state.plants.find(p => p.id === id);
+  const now = new Date();
+  const nowIso = now.toISOString();
   const plant = existing || {
     id: `plant-${Date.now()}`,
     mood: '😊',
     moodText: 'new friend'
   };
+  if (!plant.createdAt) plant.createdAt = nowIso;
 
   plant.name = name;
   plant.kind = kind;
@@ -1659,6 +1879,12 @@ function savePlantFromForm(event) {
   plant.feed = document.getElementById('plant-feed').value.trim();
   plant.harvest = document.getElementById('plant-harvest').value.trim();
   plant.notes = document.getElementById('plant-notes').value.trim();
+  plant.updatedAt = nowIso;
+  plant.care = {
+    water: careEntry(existing, 'water', plant.water, now),
+    feed: careEntry(existing, 'feed', plant.feed, now),
+    harvest: careEntry(existing, 'harvest', plant.harvest, now)
+  };
   plant.emoji = plantEmoji(kind, status);
   plant.mood = status === 'happy' ? '😊' : status === 'harvest' ? '😋' : status === 'trim' ? '😄' : '🙂';
   plant.moodText = status === 'happy' ? 'all good' : status === 'harvest' ? 'ready to share' : status === 'trim' ? 'needs a trim' : 'needs water';
@@ -1671,6 +1897,7 @@ function savePlantFromForm(event) {
       text: `Added ${plant.name}`,
       who: plant.name,
       date: todayLabel(),
+      at: nowIso,
       dot: '#6a8d5b',
       type: 'add'
     });

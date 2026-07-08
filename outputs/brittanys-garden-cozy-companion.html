@@ -152,6 +152,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   width: 64px; height: 64px; border-radius: 18px; flex: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: transform 0.15s; overflow: hidden;
+  border: none; padding: 0; background: transparent;
 }
 .plant-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .plant-avatar.placeholder {
@@ -202,6 +203,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: #fffdf7; border-radius: 14px; padding: 12px 14px;
   display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
   cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+  border: none; width: 100%; text-align: left; font-family: 'Nunito', sans-serif;
 }
 .plant-chip:hover { box-shadow: 0 4px 14px rgba(60,50,30,.10); transform: translateY(-1px); }
 .chip-avatar {
@@ -229,6 +231,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: #fffdf7; border-radius: 22px; overflow: hidden;
   box-shadow: 0 2px 8px rgba(60,50,30,.05);
   cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+  border: none; width: 100%; text-align: left; font-family: 'Nunito', sans-serif;
 }
 .roster-card:hover { box-shadow: 0 4px 14px rgba(60,50,30,.10); transform: translateY(-2px); }
 .roster-photo {
@@ -314,6 +317,51 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .setup-row:last-child { border-bottom: none; }
 .setup-label { font-size: 14px; font-weight: 700; color: #5e6a52; }
 .setup-value { font-size: 14px; font-weight: 600; color: #33442f; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-full { grid-column: 1 / -1; }
+.field label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #8a8270;
+}
+.field input,
+.field select,
+.field textarea,
+.setting-input {
+  width: 100%;
+  border: 1.5px solid #d8cfb8;
+  background: #fffdf7;
+  color: #33442f;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: 700 14px 'Nunito', sans-serif;
+}
+.field textarea { min-height: 82px; resize: vertical; }
+.setting-input { max-width: 230px; text-align: right; }
+.form-actions { display: flex; gap: 10px; margin-top: 16px; }
+.hidden { display: none !important; }
+.empty-state {
+  background: #fffdf7;
+  border-radius: 22px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(60,50,30,.05);
+}
+.empty-emoji { font-size: 34px; }
+.empty-title {
+  font-family: 'Baloo 2', cursive;
+  font-weight: 800;
+  font-size: 21px;
+  color: #33442f;
+  margin-top: 8px;
+}
+.empty-sub { font-size: 14px; font-weight: 600; color: #5e6a52; line-height: 1.45; margin-top: 4px; }
+.task-grid > .empty-state,
+.board-grid > .empty-state,
+.roster-grid > .empty-state { grid-column: 1 / -1; }
 .toggle { width: 48px; height: 26px; border-radius: 13px; background: #d8cfb8; border: none; cursor: pointer; position: relative; transition: background 0.18s; flex: none; }
 .toggle.on { background: #6a8d5b; }
 .toggle-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.18s; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
@@ -421,6 +469,9 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .mood-badge { padding: 7px 10px; }
   .log-buttons { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .setup-row { gap: 16px; align-items: flex-start; }
+  .field-grid { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column; }
+  .setting-input { max-width: 190px; }
   .toast {
     bottom: calc(96px + env(safe-area-inset-bottom));
     left: 16px;
@@ -521,10 +572,57 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         <div class="planters-header">
           <div>
             <div class="screen-title">Your Planters 🏡</div>
-            <div class="planters-sub">5 green friends, all under your care.</div>
+            <div class="planters-sub" id="planters-sub">No plants yet.</div>
           </div>
-          <button class="add-btn">＋ Add a friend</button>
+          <button class="add-btn" type="button" data-action="show-plant-form">＋ Add a plant</button>
         </div>
+        <form class="setup-card hidden" id="plant-form">
+          <div class="setup-card-title" id="plant-form-title">🌱 Add a plant</div>
+          <input type="hidden" id="plant-id">
+          <div class="field-grid">
+            <div class="field">
+              <label for="plant-name">Name</label>
+              <input id="plant-name" autocomplete="off" required placeholder="Cherry tomato">
+            </div>
+            <div class="field">
+              <label for="plant-kind">Plant type</label>
+              <input id="plant-kind" autocomplete="off" placeholder="Tomato, basil, pepper">
+            </div>
+            <div class="field">
+              <label for="plant-planter">Planter</label>
+              <input id="plant-planter" autocomplete="off" placeholder="Patio box">
+            </div>
+            <div class="field">
+              <label for="plant-status">Care status</label>
+              <select id="plant-status">
+                <option value="happy">All good</option>
+                <option value="thirsty">Needs water</option>
+                <option value="trim">Needs trimming</option>
+                <option value="harvest">Ready to harvest</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="plant-water">Next drink</label>
+              <input id="plant-water" autocomplete="off" placeholder="Tomorrow">
+            </div>
+            <div class="field">
+              <label for="plant-sun">Sun</label>
+              <input id="plant-sun" autocomplete="off" placeholder="Full sun">
+            </div>
+            <div class="field">
+              <label for="plant-feed">Feed</label>
+              <input id="plant-feed" autocomplete="off" placeholder="In 10 days">
+            </div>
+            <div class="field field-full">
+              <label for="plant-notes">Notes</label>
+              <textarea id="plant-notes" placeholder="What should Brittany remember?"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="task-btn task-btn-primary" type="submit" style="margin-top:0">Save plant</button>
+            <button class="task-btn task-btn-outline" type="button" data-action="cancel-plant-form" style="margin-top:0">Cancel</button>
+          </div>
+        </form>
         <div class="roster-grid" id="roster-grid"></div>
       </div>
 
@@ -544,11 +642,11 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
             <div class="stat-label">moments logged</div>
           </div>
           <div class="stat-tile stat-tile-peach">
-            <div class="stat-number">6</div>
+            <div class="stat-number" id="stat-harvests">0</div>
             <div class="stat-label">harvests shared</div>
           </div>
           <div class="stat-tile stat-tile-butter">
-            <div class="stat-number">12</div>
+            <div class="stat-number" id="stat-streak">0</div>
             <div class="stat-label">day streak 🔥</div>
           </div>
         </div>
@@ -561,22 +659,22 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px;margin-bottom:24px">Make it feel like yours.</div>
         <div class="setup-card">
           <div class="setup-card-title">🏡 About your garden</div>
-          <div class="setup-row"><span class="setup-label">Gardener</span><span class="setup-value">Brittany 🌼</span></div>
-          <div class="setup-row"><span class="setup-label">Garden name</span><span class="setup-value">The Sunny Patio</span></div>
-          <div class="setup-row"><span class="setup-label">Location</span><span class="setup-value">Portland, OR · zone 8b</span></div>
+          <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off"></div>
+          <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off"></div>
+          <div class="setup-row"><label class="setup-label" for="setting-location">Location</label><input class="setting-input" id="setting-location" autocomplete="off"></div>
           <div class="setup-row">
             <span class="setup-label">Temperature</span>
             <div class="temp-toggle">
-              <button class="temp-opt active">°F</button>
-              <button class="temp-opt">°C</button>
+              <button class="temp-opt active" type="button" data-temp="F">°F</button>
+              <button class="temp-opt" type="button" data-temp="C">°C</button>
             </div>
           </div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">🔔 Friendly nudges</div>
-          <div class="setup-row"><span class="setup-label">Thirsty reminders</span><button class="toggle on" data-notif="water"><div class="toggle-knob"></div></button></div>
-          <div class="setup-row"><span class="setup-label">Harvest is ready</span><button class="toggle on" data-notif="harvest"><div class="toggle-knob"></div></button></div>
-          <div class="setup-row"><span class="setup-label">Weather watch</span><button class="toggle on" data-notif="weather"><div class="toggle-knob"></div></button></div>
+          <div class="setup-row"><span class="setup-label">Thirsty reminders</span><button class="toggle on" type="button" data-notif="water" aria-label="Toggle thirsty reminders"><div class="toggle-knob"></div></button></div>
+          <div class="setup-row"><span class="setup-label">Harvest is ready</span><button class="toggle on" type="button" data-notif="harvest" aria-label="Toggle harvest reminders"><div class="toggle-knob"></div></button></div>
+          <div class="setup-row"><span class="setup-label">Weather watch</span><button class="toggle on" type="button" data-notif="weather" aria-label="Toggle weather watch"><div class="toggle-knob"></div></button></div>
         </div>
         <div class="offline-panel">
           <div class="offline-icon">📿</div>
@@ -606,75 +704,29 @@ const PHOTOS = {
 const state = {
   scr: 'today',
   selId: null,
-  streak: 12,
+  streak: 0,
   doneToday: {},
+  settings: {
+    gardener: 'Brittany',
+    garden: 'My Garden',
+    location: '',
+    temp: 'F'
+  },
   notif: { water: true, harvest: true, weather: true },
-  plants: [
-    {
-      id: 'cherry', name: 'Cherry', kind: 'cherry tomato', planter: 'Patio Box', emoji: '🍅',
-      status: 'thirsty', mood: '😊', moodText: 'feeling great',
-      water: 'Tomorrow', sun: 'Full sun', feed: '5 days',
-      blurb: '"34 days old and I just made my first tomato! 🍅 A drink every couple days and lots of sun keeps me smiling."',
-      todayMsg: 'Soil\'s dry on top — a drink would make her day.',
-      rosterNote: 'Thirsty — a drink would be lovely.',
-      btnLabel: '💧 Give a drink', btnType: 'primary', actionType: 'water',
-      doneEmoji: '💧', doneTitle: 'All watered!', doneSub: 'Cherry is one happy plant.'
-    },
-    {
-      id: 'romeo', name: 'Romeo', kind: 'roma tomato', planter: 'Patio Box', emoji: '🍅',
-      status: 'happy', mood: '😎', moodText: 'chillin\'',
-      water: 'In 2 days', sun: 'Full sun', feed: '8 days',
-      blurb: '"I\'m growing strong and slow, just how I like it. More sun, a little patience, and I\'ll be worth the wait. 🍅"',
-      todayMsg: 'All good today — just enjoying the sunshine.',
-      rosterNote: 'All good and growing steadily.'
-    },
-    {
-      id: 'basil', name: 'Basil', kind: 'sweet basil', planter: 'Herb Pot', emoji: '🌿',
-      status: 'trim', mood: '😄', moodText: 'getting leafy',
-      water: 'Today', sun: 'Partial sun', feed: '10 days',
-      blurb: '"I\'ve got flowers coming in — but if you pinch them, I\'ll keep making tasty leaves all summer! ✂️"',
-      todayMsg: 'Pinch her flower buds to keep leaves coming.',
-      rosterNote: 'Flowers appearing — needs a trim soon.',
-      btnLabel: '✂️ Mark trimmed', btnType: 'outline', actionType: 'trim',
-      doneEmoji: '✨', doneTitle: 'Looking fresh!', doneSub: 'Basil says thank you.'
-    },
-    {
-      id: 'pepperoni', name: 'Pepperoni', kind: 'bell pepper', planter: 'Herb Pot', emoji: '🫑',
-      status: 'happy', mood: '😌', moodText: 'super content',
-      water: 'In 3 days', sun: 'Full sun', feed: '12 days',
-      blurb: '"Taking my time ripening — good things come to those who wait! Aiming for a big beautiful pepper by July. 🫑"',
-      todayMsg: 'Right on track — no action needed.',
-      rosterNote: 'Growing steadily, no action needed.'
-    },
-    {
-      id: 'buttercup', name: 'Buttercup', kind: 'butter lettuce', planter: 'Lettuce Bowl', emoji: '🥬',
-      status: 'harvest', mood: '😋', moodText: 'ready to share',
-      water: 'In 1 day', sun: 'Partial sun', feed: '14 days',
-      blurb: '"My outer leaves are plump and ready! Snip a few and I\'ll keep regrowing from the middle. Lunch is on me! 🥗"',
-      todayMsg: 'Snip a few outer leaves — lunch is served! 🥗',
-      rosterNote: 'Outer leaves ready — harvest time!',
-      btnLabel: '🧺 Harvest some', btnType: 'outline', actionType: 'pick',
-      doneEmoji: '🥗', doneTitle: 'Snipped & shared!', doneSub: 'Buttercup will regrow from the center.'
-    }
-  ],
-  journal: [
-    { id: 1, emoji: '💧', text: 'Watered Cherry', who: 'Cherry', date: 'Jun 19', dot: '#7fb0c9' },
-    { id: 2, emoji: '🌿', text: 'Fed Cherry with tomato-tone', who: 'Cherry', date: 'Jun 17', dot: '#6a8d5b' },
-    { id: 3, emoji: '🧺', text: 'Picked 6 cherry tomatoes', who: 'Cherry', date: 'Jun 14', dot: '#c98a5e' },
-    { id: 4, emoji: '🌼', text: "Cherry's first flower bloomed!", who: 'Cherry', date: 'Jun 12', dot: '#e3b34d' },
-    { id: 5, emoji: '💧', text: 'Watered Basil', who: 'Basil', date: 'Jun 20', dot: '#7fb0c9' },
-    { id: 6, emoji: '🌿', text: 'Fed Pepperoni', who: 'Pepperoni', date: 'Jun 11', dot: '#6a8d5b' }
-  ]
+  plants: [],
+  journal: []
 };
 
-const storageKey = 'brittanys-garden-mobile-v1';
+const storageKey = 'brittanys-garden-mobile-v2';
 
 function hydrateState() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
     if (!saved) return;
     if (saved.doneToday && typeof saved.doneToday === 'object') state.doneToday = saved.doneToday;
+    if (saved.settings && typeof saved.settings === 'object') state.settings = { ...state.settings, ...saved.settings };
     if (saved.notif && typeof saved.notif === 'object') state.notif = { ...state.notif, ...saved.notif };
+    if (Array.isArray(saved.plants)) state.plants = saved.plants;
     if (Array.isArray(saved.journal)) state.journal = saved.journal;
     if (Number.isFinite(saved.streak)) state.streak = saved.streak;
   } catch (error) {
@@ -685,17 +737,13 @@ function hydrateState() {
 function saveState() {
   localStorage.setItem(storageKey, JSON.stringify({
     doneToday: state.doneToday,
+    settings: state.settings,
     notif: state.notif,
+    plants: state.plants,
     journal: state.journal.slice(0, 60),
     streak: state.streak,
     savedAt: new Date().toISOString()
   }));
-}
-
-function syncSettingsControls() {
-  document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
-    btn.classList.toggle('on', !!state.notif[btn.dataset.notif]);
-  });
 }
 
 hydrateState();
@@ -713,27 +761,131 @@ function photoEl(id, className, size) {
 }
 
 function statusPill(status) {
-  const map = {
-    thirsty: '<span class="status-pill pill-thirsty">💧 thirsty</span>',
-    trim:    '<span class="status-pill pill-trim">✂️ trim me</span>',
-    harvest: '<span class="status-pill pill-harvest">🧺 ready!</span>',
-    happy:   '<span class="status-pill pill-happy">✅ all good</span>'
-  };
-  return map[status] || '';
+  const meta = statusMeta(status);
+  return `<span class="status-pill ${meta.cls || 'pill-happy'}">${meta.pill || '✅ all good'}</span>`;
 }
 
 function rosterStatusPill(status) {
-  const map = {
-    thirsty: '<span class="roster-status-pill pill-thirsty">💧 thirsty</span>',
-    trim:    '<span class="roster-status-pill pill-trim">✂️ trim me</span>',
-    harvest: '<span class="roster-status-pill pill-harvest">🧺 ready!</span>',
-    happy:   ''
-  };
-  return map[status] || '';
+  if (status === 'happy') return '';
+  const meta = statusMeta(status);
+  return `<span class="roster-status-pill ${meta.cls || 'pill-happy'}">${meta.pill || ''}</span>`;
 }
 
 function dotColor(type) {
   return { water: '#7fb0c9', feed: '#6a8d5b', trim: '#c98a5e', pick: '#c98a5e' }[type] || '#a59a82';
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[char]));
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function statusMeta(status) {
+  return {
+    thirsty: {
+      pill: '💧 thirsty',
+      cls: 'pill-thirsty',
+      note: 'Needs a drink',
+      msg: 'Check the soil and give water if the top inch is dry.',
+      btnLabel: '💧 Mark watered',
+      actionType: 'water',
+      doneEmoji: '💧',
+      doneTitle: 'All watered!',
+      doneSub: 'This plant is set for now.'
+    },
+    trim: {
+      pill: '✂️ trim me',
+      cls: 'pill-trim',
+      note: 'Ready for a trim',
+      msg: 'Trim or pinch back growth to keep things tidy.',
+      btnLabel: '✂️ Mark trimmed',
+      actionType: 'trim',
+      doneEmoji: '✨',
+      doneTitle: 'Looking fresh!',
+      doneSub: 'Nice cleanup.'
+    },
+    harvest: {
+      pill: '🧺 ready!',
+      cls: 'pill-harvest',
+      note: 'Ready to harvest',
+      msg: 'Pick what is ready and log the harvest.',
+      btnLabel: '🧺 Mark harvested',
+      actionType: 'pick',
+      doneEmoji: '🥗',
+      doneTitle: 'Harvest logged!',
+      doneSub: 'Fresh food, nicely tracked.'
+    },
+    happy: {
+      pill: '✅ all good',
+      cls: 'pill-happy',
+      note: 'All good',
+      msg: 'No action needed today.',
+      btnLabel: '✅ Mark checked',
+      actionType: 'check',
+      doneEmoji: '✅',
+      doneTitle: 'Checked in!',
+      doneSub: 'Everything looks good.'
+    }
+  }[status] || {};
+}
+
+function plantEmoji(kind, status) {
+  const text = `${kind || ''} ${status || ''}`.toLowerCase();
+  if (text.includes('tomato')) return '🍅';
+  if (text.includes('pepper')) return '🫑';
+  if (text.includes('lettuce') || text.includes('kale')) return '🥬';
+  if (text.includes('basil') || text.includes('herb')) return '🌿';
+  if (text.includes('flower')) return '🌼';
+  return '🌱';
+}
+
+function plantBlurb(p) {
+  return p.notes || `${p.name} is part of ${state.settings.garden || 'the garden'}.`;
+}
+
+function openPlantForm(id) {
+  const form = document.getElementById('plant-form');
+  const plant = state.plants.find(p => p.id === id);
+  document.getElementById('plant-form-title').textContent = plant ? '✏️ Edit plant' : '🌱 Add a plant';
+  document.getElementById('plant-id').value = plant?.id || '';
+  document.getElementById('plant-name').value = plant?.name || '';
+  document.getElementById('plant-kind').value = plant?.kind || '';
+  document.getElementById('plant-planter').value = plant?.planter || '';
+  document.getElementById('plant-status').value = plant?.status || 'happy';
+  document.getElementById('plant-water').value = plant?.water || '';
+  document.getElementById('plant-sun').value = plant?.sun || '';
+  document.getElementById('plant-feed').value = plant?.feed || '';
+  document.getElementById('plant-notes').value = plant?.notes || '';
+  form.classList.remove('hidden');
+  navigate('planters');
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closePlantForm() {
+  document.getElementById('plant-form').reset();
+  document.getElementById('plant-id').value = '';
+  document.getElementById('plant-form').classList.add('hidden');
+}
+
+function syncSettingsControls() {
+  document.getElementById('setting-gardener').value = state.settings.gardener || '';
+  document.getElementById('setting-garden').value = state.settings.garden || '';
+  document.getElementById('setting-location').value = state.settings.location || '';
+  document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
+    btn.classList.toggle('on', !!state.notif[btn.dataset.notif]);
+  });
+  document.querySelectorAll('.temp-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.temp === state.settings.temp);
+  });
 }
 
 // ============================
@@ -765,11 +917,14 @@ function renderToday() {
   const tasks = state.plants.filter(p => ['thirsty','trim','harvest'].includes(p.status));
   const remaining = tasks.filter(p => !state.doneToday[p.id]).length;
 
-  document.getElementById('hero-sub').textContent = remaining === 0
-    ? "Every friend's been visited — your garden is positively beaming. Go enjoy the sunshine! 🌻"
+  document.querySelector('.hero-greeting').textContent = `Hi ${state.settings.gardener || 'Brittany'}! ☀️`;
+  document.getElementById('hero-sub').textContent = state.plants.length === 0
+    ? `Start by adding the first plant in ${state.settings.garden || 'your garden'}.`
+    : remaining === 0
+    ? "Everything logged for now. Check back when a plant needs care."
     : `Your garden's having a lovely sunny day. ${remaining === 1 ? 'One friend' : remaining + ' friends'} would love a quick visit — you've got this!`;
 
-  document.getElementById('today-count').textContent = remaining === 0 ? 'All done! 🎉' : remaining + ' to go';
+  document.getElementById('today-count').textContent = state.plants.length === 0 ? 'blank slate' : remaining === 0 ? 'All done! 🎉' : remaining + ' to go';
 
   const badge = document.getElementById('badge');
   badge.textContent = remaining;
@@ -778,30 +933,40 @@ function renderToday() {
   const grid = document.getElementById('task-grid');
   let html = '';
 
+  if (state.plants.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">🌱</div>
+      <div class="empty-title">No plants yet</div>
+      <div class="empty-sub">Add the first plant, then Brittany can track watering, trimming, harvests, and notes from here.</div>
+      <button class="task-btn task-btn-primary" type="button" data-action="show-plant-form">＋ Add a plant</button>
+    </div>`;
+    return;
+  }
+
   tasks.forEach(p => {
+    const meta = statusMeta(p.status);
     if (state.doneToday[p.id]) {
       html += `<div class="task-card">
         <div class="task-done">
-          <div class="task-done-emoji">${p.doneEmoji}</div>
-          <div class="task-done-title">${p.doneTitle}</div>
-          <div class="task-done-sub">${p.doneSub}</div>
+          <div class="task-done-emoji">${meta.doneEmoji}</div>
+          <div class="task-done-title">${meta.doneTitle}</div>
+          <div class="task-done-sub">${escapeHtml(meta.doneSub)}</div>
         </div>
       </div>`;
     } else {
-      const btnCls = p.btnType === 'primary' ? 'task-btn task-btn-primary' : 'task-btn task-btn-outline';
       const hasPhoto = !!PHOTOS[p.id];
       html += `<div class="task-card">
         <div class="task-card-header">
-          <div class="plant-avatar ${hasPhoto ? '' : 'placeholder'}" onclick="navigate('detail','${p.id}')">
+          <button class="plant-avatar ${hasPhoto ? '' : 'placeholder'}" type="button" data-action="view-plant" data-id="${p.id}" aria-label="Open ${escapeHtml(p.name)}">
             ${photoEl(p.id, '', 26)}
-          </div>
+          </button>
           <div>
-            <div class="task-name">${p.name}</div>
+            <div class="task-name">${escapeHtml(p.name)}</div>
             ${statusPill(p.status)}
           </div>
         </div>
-        <div class="task-msg">${p.todayMsg}</div>
-        <button class="${btnCls}" onclick="logCare('${p.id}','${p.actionType}',event)">${p.btnLabel}</button>
+        <div class="task-msg">${escapeHtml(meta.msg)}</div>
+        <button class="task-btn ${p.status === 'thirsty' ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="log-care" data-id="${p.id}" data-care="${meta.actionType}">${meta.btnLabel}</button>
       </div>`;
     }
   });
@@ -812,7 +977,7 @@ function renderToday() {
     html += `<div class="happy-card">
       <div class="happy-emoji">🌻</div>
       <div class="happy-title">Everyone else is happy!</div>
-      <div class="happy-sub">${names} ${happy.length === 1 ? 'is' : 'are'} right on track. Come back tomorrow 🌱</div>
+      <div class="happy-sub">${escapeHtml(names)} ${happy.length === 1 ? 'is' : 'are'} right on track. Come back later 🌱</div>
     </div>`;
   }
 
@@ -828,20 +993,30 @@ function renderBoard() {
   const happy   = state.plants.filter(p => p.status === 'happy');
 
   function note(p) {
-    return { thirsty:'Needs a drink', trim:'Time for a trim', harvest:'Ready to harvest', happy:'All good!' }[p.status];
+    return statusMeta(p.status).note || 'All good';
   }
   function chips(list) {
     if (!list.length) return '<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">Nothing here right now 🌱</div>';
     return list.map(p => {
       const hasPhoto = !!PHOTOS[p.id];
-      return `<div class="plant-chip" onclick="navigate('detail','${p.id}')">
+      return `<button class="plant-chip" type="button" data-action="view-plant" data-id="${p.id}">
         <div class="chip-avatar ${hasPhoto ? '' : 'placeholder'}">${photoEl(p.id,'',20)}</div>
         <div>
-          <div class="chip-name">${p.name}</div>
-          <div class="chip-note">${note(p)}</div>
+          <div class="chip-name">${escapeHtml(p.name)}</div>
+          <div class="chip-note">${escapeHtml(note(p))}</div>
         </div>
-      </div>`;
+      </button>`;
     }).join('');
+  }
+
+  if (state.plants.length === 0) {
+    document.getElementById('board-grid').innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">🪴</div>
+      <div class="empty-title">Care board is empty</div>
+      <div class="empty-sub">Add plants first. They will sort here by water, trim, harvest, and all-good status.</div>
+      <button class="task-btn task-btn-primary" type="button" data-action="show-plant-form">＋ Add a plant</button>
+    </div>`;
+    return;
   }
 
   document.getElementById('board-grid').innerHTML = `
@@ -863,22 +1038,35 @@ function renderBoard() {
 // RENDER PLANTERS
 // ============================
 function renderPlanters() {
+  document.getElementById('planters-sub').textContent = state.plants.length === 0
+    ? 'No plants yet.'
+    : `${state.plants.length} ${state.plants.length === 1 ? 'plant' : 'plants'} under your care.`;
+
+  if (state.plants.length === 0) {
+    document.getElementById('roster-grid').innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">🌿</div>
+      <div class="empty-title">Start with one plant</div>
+      <div class="empty-sub">Use the form above to add a tomato, herb, flower, or anything else Brittany is growing.</div>
+    </div>`;
+    return;
+  }
+
   document.getElementById('roster-grid').innerHTML = state.plants.map(p => {
     const hasPhoto = !!PHOTOS[p.id];
-    return `<div class="roster-card" onclick="navigate('detail','${p.id}')">
+    return `<button class="roster-card" type="button" data-action="view-plant" data-id="${p.id}">
       <div class="roster-photo ${hasPhoto ? '' : 'placeholder'}">
-        ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">` : `<span class="roster-photo-emoji">${p.emoji}</span>`}
+        ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover">` : `<span class="roster-photo-emoji">${p.emoji}</span>`}
         ${rosterStatusPill(p.status)}
       </div>
       <div class="roster-body">
         <div class="roster-name-row">
-          <div class="roster-name">${p.name}</div>
+          <div class="roster-name">${escapeHtml(p.name)}</div>
           <div class="roster-mood">${p.mood}</div>
         </div>
-        <div class="roster-meta">${p.kind} · ${p.planter}</div>
-        <div class="roster-note">${p.rosterNote}</div>
+        <div class="roster-meta">${escapeHtml(p.kind || 'plant')} · ${escapeHtml(p.planter || state.settings.garden || 'garden')}</div>
+        <div class="roster-note">${escapeHtml(statusMeta(p.status).note || 'All good')}</div>
       </div>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
@@ -887,50 +1075,58 @@ function renderPlanters() {
 // ============================
 function renderDetail() {
   const p = state.plants.find(x => x.id === state.selId);
-  if (!p) return;
+  if (!p) {
+    navigate('planters');
+    return;
+  }
 
   const hasPhoto = !!PHOTOS[p.id];
   const plantJournal = state.journal.filter(e => e.who === p.name);
+  const trimOrPick = p.status === 'harvest' ? 'pick' : 'trim';
 
   const storyHtml = plantJournal.length
     ? plantJournal.map(e => `<div class="story-row">
         <div class="story-row-emoji">${e.emoji}</div>
-        <div><div class="story-bold">${e.text}</div><div class="story-sub">${e.date}</div></div>
+        <div><div class="story-bold">${escapeHtml(e.text)}</div><div class="story-sub">${escapeHtml(e.date)}</div></div>
       </div>`).join('')
-    : `<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">No entries yet — log some care to start ${p.name}'s story! 🌱</div>`;
+    : `<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">No entries yet. Log care to start ${escapeHtml(p.name)}'s story. 🌱</div>`;
 
   document.getElementById('detail-container').innerHTML = `
     <div class="detail-hero ${hasPhoto ? '' : 'placeholder'}">
-      ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${p.name}">` : `<div class="detail-hero-label">${p.emoji} photo · ${p.kind}</div>`}
+      ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}">` : `<div class="detail-hero-label">${p.emoji} ${escapeHtml(p.kind || 'plant')}</div>`}
     </div>
     <div class="detail-body">
       <div class="detail-identity">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div>
-            <div class="detail-name">${p.name}</div>
-            <div class="detail-meta-text">${p.kind} · ${p.planter}</div>
+            <div class="detail-name">${escapeHtml(p.name)}</div>
+            <div class="detail-meta-text">${escapeHtml(p.kind || 'plant')} · ${escapeHtml(p.planter || state.settings.garden || 'garden')}</div>
           </div>
           <div class="mood-badge">
             <span class="mood-badge-emoji">${p.mood}</span>
-            <span class="mood-badge-text">${p.moodText}</span>
+            <span class="mood-badge-text">${escapeHtml(p.moodText)}</span>
           </div>
         </div>
-        <div class="detail-blurb">${p.blurb}</div>
+        <div class="detail-blurb">${escapeHtml(plantBlurb(p))}</div>
       </div>
       <div class="vitals-grid">
-        <div class="vital-tile"><div class="vital-emoji">💧</div><div class="vital-value">${p.water}</div><div class="vital-label">next drink</div></div>
-        <div class="vital-tile"><div class="vital-emoji">☀️</div><div class="vital-value">${p.sun}</div><div class="vital-label">happy place</div></div>
-        <div class="vital-tile"><div class="vital-emoji">🌿</div><div class="vital-value">${p.feed}</div><div class="vital-label">till feeding</div></div>
+        <div class="vital-tile"><div class="vital-emoji">💧</div><div class="vital-value">${escapeHtml(p.water || 'Set later')}</div><div class="vital-label">next drink</div></div>
+        <div class="vital-tile"><div class="vital-emoji">☀️</div><div class="vital-value">${escapeHtml(p.sun || 'Set later')}</div><div class="vital-label">happy place</div></div>
+        <div class="vital-tile"><div class="vital-emoji">🌿</div><div class="vital-value">${escapeHtml(p.feed || 'Set later')}</div><div class="vital-label">till feeding</div></div>
       </div>
       <div class="log-buttons">
-        <button class="task-btn task-btn-primary" onclick="logCare('${p.id}','water',event)" style="flex:1">💧 Watered</button>
-        <button class="task-btn task-btn-outline" onclick="logCare('${p.id}','feed',event)" style="flex:1">🌿 Fed</button>
-        <button class="task-btn task-btn-outline" onclick="logCare('${p.id}','${p.actionType === 'pick' ? 'pick' : 'trim'}',event)" style="flex:1">${p.actionType === 'pick' ? '🧺 Picked' : '✂️ Trimmed'}</button>
+        <button class="task-btn task-btn-primary" type="button" data-action="log-care" data-id="${p.id}" data-care="water" style="flex:1">💧 Watered</button>
+        <button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="feed" style="flex:1">🌿 Fed</button>
+        <button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="${trimOrPick}" style="flex:1">${trimOrPick === 'pick' ? '🧺 Picked' : '✂️ Trimmed'}</button>
+      </div>
+      <div class="form-actions">
+        <button class="task-btn task-btn-outline" type="button" data-action="edit-plant" data-id="${p.id}" style="margin-top:0">✏️ Edit plant</button>
+        <button class="task-btn task-btn-outline" type="button" data-action="delete-plant" data-id="${p.id}" style="margin-top:0">Remove</button>
       </div>
       <div class="story-section">
-        <div class="section-label" style="margin-bottom:12px">${p.name}'s story 🎉</div>
+        <div class="section-label" style="margin-bottom:12px">${escapeHtml(p.name)}'s story 🎉</div>
         ${storyHtml}
-        <button class="story-add-btn">＋ Add to ${p.name}'s story</button>
+        <button class="story-add-btn" type="button" data-action="log-care" data-id="${p.id}" data-care="check">＋ Add check-in</button>
       </div>
     </div>`;
 }
@@ -940,6 +1136,16 @@ function renderDetail() {
 // ============================
 function renderJournal() {
   document.getElementById('stat-moments').textContent = state.journal.length;
+  document.getElementById('stat-harvests').textContent = state.journal.filter(e => e.type === 'pick').length;
+  document.getElementById('stat-streak').textContent = state.streak;
+  if (!state.journal.length) {
+    document.getElementById('journal-timeline').innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">📖</div>
+      <div class="empty-title">No journal yet</div>
+      <div class="empty-sub">Care notes will appear here after Brittany logs watering, feeding, trimming, harvests, or check-ins.</div>
+    </div>`;
+    return;
+  }
   document.getElementById('journal-timeline').innerHTML = `
     <div class="timeline-rail"></div>
     ${state.journal.map(e => `
@@ -948,8 +1154,8 @@ function renderJournal() {
         <div class="timeline-card">
           <div class="timeline-emoji">${e.emoji}</div>
           <div class="timeline-text">
-            <div class="timeline-bold">${e.text}</div>
-            <div class="timeline-sub">${e.who} · ${e.date}</div>
+            <div class="timeline-bold">${escapeHtml(e.text)}</div>
+            <div class="timeline-sub">${escapeHtml(e.who)} · ${escapeHtml(e.date)}</div>
           </div>
         </div>
       </div>`).join('')}`;
@@ -958,7 +1164,7 @@ function renderJournal() {
 // ============================
 // LOG CARE
 // ============================
-function logCare(plantId, type, event) {
+function logCare(plantId, type) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
 
@@ -966,18 +1172,28 @@ function logCare(plantId, type, event) {
     water: { text: `${p.name} got a refreshing drink`, emoji: '💧', title: 'All watered!',       sub: `${p.name} is one happy plant.` },
     feed:  { text: `${p.name} enjoyed a tasty feed`,   emoji: '🌿', title: 'Well fed!',           sub: `${p.name} says yum.` },
     trim:  { text: `${p.name} got a tidy trim`,        emoji: '✨', title: 'Looking fresh!',      sub: `${p.name} is feeling spritely.` },
-    pick:  { text: `Picked fresh from ${p.name}`,      emoji: '🥗', title: 'Snipped & shared!',  sub: `${p.name} will keep growing.` }
+    pick:  { text: `Picked fresh from ${p.name}`,      emoji: '🥗', title: 'Harvest logged!',    sub: `${p.name} will keep growing.` },
+    check: { text: `Checked in on ${p.name}`,          emoji: '✅', title: 'Check-in saved!',    sub: `${p.name}'s story was updated.` }
   };
-  const v = verbs[type] || verbs.water;
+  const v = verbs[type] || verbs.check;
 
   state.doneToday[plantId] = type;
-  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: 'Just now', dot: dotColor(type) });
+  if (type !== 'check') {
+    p.status = 'happy';
+    p.mood = '😊';
+    p.moodText = 'all set';
+  }
+  state.streak = Math.max(1, state.streak || 0);
+  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), dot: dotColor(type), type });
   saveState();
 
   showToast(v.emoji, v.title, v.sub);
 
   if (state.scr === 'today') renderToday();
   if (state.scr === 'detail') renderDetail();
+  if (state.scr === 'board') renderBoard();
+  if (state.scr === 'planters') renderPlanters();
+  if (state.scr === 'journal') renderJournal();
 }
 
 // ============================
@@ -1008,14 +1224,91 @@ function showToast(emoji, title, sub) {
   setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2400);
 }
 
+function savePlantFromForm(event) {
+  event.preventDefault();
+  const id = document.getElementById('plant-id').value;
+  const name = document.getElementById('plant-name').value.trim();
+  if (!name) return;
+
+  const kind = document.getElementById('plant-kind').value.trim();
+  const status = document.getElementById('plant-status').value;
+  const existing = state.plants.find(p => p.id === id);
+  const plant = existing || {
+    id: `plant-${Date.now()}`,
+    mood: '😊',
+    moodText: 'new friend'
+  };
+
+  plant.name = name;
+  plant.kind = kind;
+  plant.planter = document.getElementById('plant-planter').value.trim();
+  plant.status = status;
+  plant.water = document.getElementById('plant-water').value.trim();
+  plant.sun = document.getElementById('plant-sun').value.trim();
+  plant.feed = document.getElementById('plant-feed').value.trim();
+  plant.notes = document.getElementById('plant-notes').value.trim();
+  plant.emoji = plantEmoji(kind, status);
+  plant.mood = status === 'happy' ? '😊' : status === 'harvest' ? '😋' : status === 'trim' ? '😄' : '🙂';
+  plant.moodText = status === 'happy' ? 'all good' : status === 'harvest' ? 'ready to share' : status === 'trim' ? 'needs a trim' : 'needs water';
+
+  if (!existing) {
+    state.plants.push(plant);
+    state.journal.unshift({
+      id: Date.now(),
+      emoji: plant.emoji,
+      text: `Added ${plant.name}`,
+      who: plant.name,
+      date: todayLabel(),
+      dot: '#6a8d5b',
+      type: 'add'
+    });
+  }
+
+  delete state.doneToday[plant.id];
+  saveState();
+  closePlantForm();
+  renderPlanters();
+  showToast('🌱', existing ? 'Plant updated' : 'Plant added', `${plant.name} is ready to track.`);
+}
+
+function deletePlant(id) {
+  const plant = state.plants.find(p => p.id === id);
+  if (!plant) return;
+  if (!confirm(`Remove ${plant.name}?`)) return;
+  state.plants = state.plants.filter(p => p.id !== id);
+  state.journal = state.journal.filter(entry => entry.who !== plant.name);
+  delete state.doneToday[id];
+  saveState();
+  navigate('planters');
+  renderPlanters();
+  showToast('🧹', 'Plant removed', `${plant.name} was removed.`);
+}
+
 // ============================
 // EVENTS
 // ============================
-document.querySelectorAll('.nav-item[data-screen]').forEach(btn => {
-  btn.addEventListener('click', () => navigate(btn.dataset.screen));
+document.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+
+  if (button.dataset.screen) {
+    navigate(button.dataset.screen);
+    return;
+  }
+
+  const action = button.dataset.action;
+  if (!action) return;
+
+  if (action === 'show-plant-form') openPlantForm();
+  if (action === 'cancel-plant-form') closePlantForm();
+  if (action === 'view-plant') navigate('detail', button.dataset.id);
+  if (action === 'edit-plant') openPlantForm(button.dataset.id);
+  if (action === 'delete-plant') deletePlant(button.dataset.id);
+  if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
 });
 
 document.getElementById('back-link').addEventListener('click', () => navigate('planters'));
+document.getElementById('plant-form').addEventListener('submit', savePlantFromForm);
 
 document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1028,8 +1321,20 @@ document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
 
 document.querySelectorAll('.temp-opt').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.temp-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    state.settings.temp = btn.dataset.temp;
+    syncSettingsControls();
+    saveState();
+  });
+});
+
+document.querySelectorAll('.setting-input').forEach(input => {
+  input.addEventListener('input', () => {
+    state.settings.gardener = document.getElementById('setting-gardener').value.trim() || 'Brittany';
+    state.settings.garden = document.getElementById('setting-garden').value.trim() || 'My Garden';
+    state.settings.location = document.getElementById('setting-location').value.trim();
+    saveState();
+    renderToday();
+    renderPlanters();
   });
 });
 
@@ -1040,7 +1345,9 @@ syncSettingsControls();
 navigate('today');
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js').then(registration => {
+    registration.update();
+  }).catch(() => {});
 }
 </script>
 </body>

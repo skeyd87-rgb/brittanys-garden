@@ -8,12 +8,15 @@ Open `index.html`, `outputs/index.html`, or `outputs/brittanys-garden-cozy-compa
 
 The current build is a static mobile web app that can be added to a phone home screen. It includes:
 
+- Blank-slate first run
+- Add and edit plants
 - Today view
 - Care Board
 - Planters view
 - Plant detail view
 - Garden Journal
-- Local demo data and generated plant assets
+- Editable setup fields
+- Local saved data and generated plant assets
 - Home-screen manifest
 - Offline cache
 - Local saved care state
@@ -33,4 +36,3 @@ Serve the folder locally, then open `/outputs/`:
 ```powershell
 python -m http.server 7432
 ```
-

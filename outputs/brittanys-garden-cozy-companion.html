@@ -179,6 +179,20 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .pill-harvest { color: #9a7d2e; background: #f6ecc4; }
 .pill-happy { color: #4d7040; background: #e7efdd; }
 .task-msg { font-size: 14px; color: #5e6a52; font-weight: 600; margin-top: 12px; line-height: 1.45; }
+.care-plan-card {
+  grid-column: 1 / -1; background: #fffdf7; border-radius: 22px; padding: 18px;
+  box-shadow: 0 2px 8px rgba(60,50,30,.05); border: 1px solid #e8dfcc;
+}
+.care-plan-title { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 20px; color: #33442f; }
+.care-plan-sub { font-size: 13px; color: #8a8270; font-weight: 700; margin-top: 2px; }
+.care-plan-list { display: grid; gap: 10px; margin-top: 14px; }
+.care-plan-row {
+  display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start;
+  background: #f8f4eb; border-radius: 14px; padding: 11px 12px;
+}
+.care-plan-emoji { font-size: 21px; text-align: center; line-height: 1.2; }
+.care-plan-main { font-size: 14px; font-weight: 800; color: #33442f; line-height: 1.25; }
+.care-plan-note { font-size: 12px; font-weight: 700; color: #7c735f; margin-top: 2px; line-height: 1.35; }
 .task-btn {
   margin-top: 14px; width: 100%; border: none; border-radius: 14px; padding: 11px;
   font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
@@ -292,6 +306,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .vital-emoji { font-size: 24px; }
 .vital-value { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 17px; color: #33442f; margin-top: 4px; }
 .vital-label { font-size: 12px; color: #8a8270; font-weight: 600; }
+.detail-plan { margin-top: 16px; }
 .log-buttons { display: flex; gap: 10px; margin-top: 16px; }
 .story-section { margin-top: 22px; }
 .story-row { background: #fffdf7; border-radius: 16px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
@@ -633,8 +648,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
               </select>
             </div>
             <div class="field">
-              <label for="plant-water">Next drink</label>
-              <input id="plant-water" autocomplete="off" placeholder="Tomorrow">
+              <label for="plant-water">Water again</label>
+              <input id="plant-water" autocomplete="off" placeholder="In 3 days">
             </div>
             <div class="field">
               <label for="plant-sun">Sun</label>
@@ -643,6 +658,10 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
             <div class="field">
               <label for="plant-feed">Feed</label>
               <input id="plant-feed" autocomplete="off" placeholder="In 10 days">
+            </div>
+            <div class="field">
+              <label for="plant-harvest">Harvest cue</label>
+              <input id="plant-harvest" autocomplete="off" placeholder="Pick when red">
             </div>
             <div class="field field-full">
               <label for="plant-notes">Notes</label>
@@ -737,7 +756,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">2. Use Today for care</div>
-          <div class="empty-sub" style="text-align:left">Today only shows plants that need water, trimming, or harvesting. Mark care when it is done.</div>
+          <div class="empty-sub" style="text-align:left">Today starts with a Care Plan, then shows plants that need water, trimming, or harvesting. Mark care when it is done.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">3. Use Care Board for the overview</div>
@@ -748,7 +767,11 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="empty-sub" style="text-align:left">Setup stores the garden name, selected location, temperature unit, and in-app care preferences. Location must be selected from search results. Weather comes from Open-Meteo and needs internet to refresh.</div>
         </div>
         <div class="setup-card">
-          <div class="setup-card-title">5. Add to phone home screen</div>
+          <div class="setup-card-title">5. Add plant directions</div>
+          <div class="empty-sub" style="text-align:left">When adding or editing a plant, fill in Water again, Feed, and Harvest cue. Those become the directions Brittany sees in the Care Plan.</div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">6. Add to phone home screen</div>
           <div class="empty-sub" style="text-align:left">Open the app link on the phone, use the browser share menu, then choose Add to Home Screen.</div>
         </div>
         <div class="offline-panel">
@@ -925,6 +948,83 @@ function statusMeta(status) {
   }[status] || {};
 }
 
+function carePlanItems(p) {
+  const meta = statusMeta(p.status);
+  const water = p.water || 'Set a watering target, like "in 3 days".';
+  const feed = p.feed || 'Add a feeding cadence if this plant needs it.';
+  const harvest = p.harvest || (
+    p.status === 'harvest'
+      ? 'Harvest what is ready today.'
+      : p.status === 'trim'
+      ? 'Trim or pinch back today, then set the next trim cue.'
+      : 'Add a harvest cue, like "pick when red" or "cut outer leaves".'
+  );
+
+  return [
+    {
+      emoji: '💧',
+      main: p.status === 'thirsty' ? `Water ${p.name} today` : `Water again: ${water}`,
+      note: p.status === 'thirsty' ? 'Check the top inch of soil first. If it is dry, water deeply.' : 'This should be the next planned drink, not a vague reminder.'
+    },
+    {
+      emoji: p.status === 'harvest' ? '🧺' : '✂️',
+      main: p.status === 'harvest' ? `Harvest ${p.name} today` : `Harvest cue: ${harvest}`,
+      note: p.status === 'trim' ? meta.msg : p.harvest ? `Cue: ${p.harvest}` : 'Use this as the visible sign Brittany should look for.'
+    },
+    {
+      emoji: '🌿',
+      main: `Feed: ${feed}`,
+      note: 'Keep this simple unless the plant has a specific fertilizer schedule.'
+    }
+  ];
+}
+
+function carePlanHtml(p, limit) {
+  return carePlanItems(p).slice(0, limit || 3).map(item => `
+    <div class="care-plan-row">
+      <div class="care-plan-emoji">${item.emoji}</div>
+      <div>
+        <div class="care-plan-main">${escapeHtml(item.main)}</div>
+        <div class="care-plan-note">${escapeHtml(item.note)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function todayPlanHtml() {
+  if (!state.plants.length) return '';
+  const ordered = [
+    ...state.plants.filter(p => ['thirsty', 'harvest', 'trim'].includes(p.status)),
+    ...state.plants.filter(p => p.status === 'happy')
+  ].slice(0, 3);
+
+  return `<div class="care-plan-card">
+    <div class="care-plan-title">Today&apos;s Care Plan</div>
+    <div class="care-plan-sub">What Brittany should do next, based on the saved plan for each plant.</div>
+    <div class="care-plan-list">
+      ${ordered.map(p => {
+        const urgent = p.status === 'harvest' ? carePlanItems(p)[1] : p.status === 'trim' ? carePlanItems(p)[1] : carePlanItems(p)[0];
+        const main = p.status === 'thirsty'
+          ? 'Water today'
+          : p.status === 'harvest'
+          ? 'Harvest today'
+          : p.status === 'trim'
+          ? 'Trim today'
+          : p.water
+          ? `Water again: ${p.water}`
+          : 'Set a water plan';
+        return `<div class="care-plan-row">
+          <div class="care-plan-emoji">${urgent.emoji}</div>
+          <div>
+            <div class="care-plan-main">${escapeHtml(p.name)}: ${escapeHtml(main)}</div>
+            <div class="care-plan-note">${escapeHtml(urgent.note)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function plantEmoji(kind, status) {
   const text = `${kind || ''} ${status || ''}`.toLowerCase();
   if (text.includes('tomato')) return '🍅';
@@ -951,6 +1051,7 @@ function openPlantForm(id) {
   document.getElementById('plant-water').value = plant?.water || '';
   document.getElementById('plant-sun').value = plant?.sun || '';
   document.getElementById('plant-feed').value = plant?.feed || '';
+  document.getElementById('plant-harvest').value = plant?.harvest || '';
   document.getElementById('plant-notes').value = plant?.notes || '';
   form.classList.remove('hidden');
   navigate('planters');
@@ -1236,7 +1337,7 @@ function renderToday() {
   badge.style.display = remaining === 0 ? 'none' : '';
 
   const grid = document.getElementById('task-grid');
-  let html = '';
+  let html = todayPlanHtml();
 
   if (state.plants.length === 0) {
     grid.innerHTML = `<div class="empty-state">
@@ -1415,9 +1516,14 @@ function renderDetail() {
         <div class="detail-blurb">${escapeHtml(plantBlurb(p))}</div>
       </div>
       <div class="vitals-grid">
-        <div class="vital-tile"><div class="vital-emoji">💧</div><div class="vital-value">${escapeHtml(p.water || 'Set later')}</div><div class="vital-label">next drink</div></div>
+        <div class="vital-tile"><div class="vital-emoji">💧</div><div class="vital-value">${escapeHtml(p.water || 'Set later')}</div><div class="vital-label">water again</div></div>
         <div class="vital-tile"><div class="vital-emoji">☀️</div><div class="vital-value">${escapeHtml(p.sun || 'Set later')}</div><div class="vital-label">happy place</div></div>
         <div class="vital-tile"><div class="vital-emoji">🌿</div><div class="vital-value">${escapeHtml(p.feed || 'Set later')}</div><div class="vital-label">till feeding</div></div>
+      </div>
+      <div class="care-plan-card detail-plan">
+        <div class="care-plan-title">Care Plan</div>
+        <div class="care-plan-sub">The next few things Brittany should watch for.</div>
+        <div class="care-plan-list">${carePlanHtml(p)}</div>
       </div>
       <div class="log-buttons">
         <button class="task-btn task-btn-primary" type="button" data-action="log-care" data-id="${p.id}" data-care="water" style="flex:1">💧 Watered</button>
@@ -1551,6 +1657,7 @@ function savePlantFromForm(event) {
   plant.water = document.getElementById('plant-water').value.trim();
   plant.sun = document.getElementById('plant-sun').value.trim();
   plant.feed = document.getElementById('plant-feed').value.trim();
+  plant.harvest = document.getElementById('plant-harvest').value.trim();
   plant.notes = document.getElementById('plant-notes').value.trim();
   plant.emoji = plantEmoji(kind, status);
   plant.mood = status === 'happy' ? '😊' : status === 'harvest' ? '😋' : status === 'trim' ? '😄' : '🙂';

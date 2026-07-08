@@ -10,6 +10,7 @@ The current build is a static mobile web app that can be added to a phone home s
 
 - Blank-slate first run
 - Add and edit plants
+- Per-plant care directions for watering, feeding, and harvest cues
 - Selectable location search
 - Live current weather for the selected location via Open-Meteo
 - Today view

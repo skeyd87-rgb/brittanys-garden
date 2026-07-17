@@ -1,0 +1,19 @@
+{
+  "name": "brittanys-garden",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ai": "^6.0.229",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@zxing/browser": "0.2.1"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

@@ -20,3 +20,10 @@ work/chrome-debug-profile*/
 Thumbs.db
 desktop.ini
 
+# Local dependencies and deployment state
+node_modules/
+.vercel/
+.env*
+!.env.example
+
+.vercel

@@ -327,6 +327,10 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .smart-list { display: grid; gap: 8px; margin-top: 12px; }
 .smart-item { background: #f8f4eb; border-radius: 14px; padding: 10px 12px; font-size: 13px; color: #5e6a52; font-weight: 800; line-height: 1.35; }
 .ai-output { margin-top: 12px; font-size: 13px; color: #33442f; font-weight: 700; line-height: 1.45; background: #eef2e6; border-radius: 14px; padding: 12px; white-space: pre-wrap; }
+.ai-suggestions { margin-top: 12px; border-top: 1px solid #e8dfcc; padding-top: 12px; }
+.ai-suggestions-title { font-size: 13px; font-weight: 900; color: #33442f; }
+.ai-suggestion-row { margin-top: 7px; font-size: 12px; font-weight: 800; color: #5e6a52; line-height: 1.4; }
+.ai-caution { margin-top: 9px; font-size: 12px; font-weight: 700; color: #8a684f; line-height: 1.4; }
 .story-section { margin-top: 22px; }
 .story-row { background: #fffdf7; border-radius: 16px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .story-row-emoji { font-size: 22px; }
@@ -842,7 +846,13 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
           <div class="setup-card-title">🏡 About your garden</div>
           <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off"></div>
           <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off"></div>
-          <div class="setup-row"><label class="setup-label" for="setting-ai-endpoint">AI helper URL</label><input class="setting-input" id="setting-ai-endpoint" autocomplete="off" placeholder="Optional private endpoint"></div>
+          <div class="setup-row">
+            <label class="setup-label" for="setting-ai-endpoint">AI helper</label>
+            <div class="location-picker">
+              <input class="setting-input" id="setting-ai-endpoint" inputmode="url" autocomplete="off" placeholder="Connected automatically">
+              <div class="field-help">The published app connects automatically. Leave this blank unless using a separate private helper URL.</div>
+            </div>
+          </div>
           <div class="setup-row">
             <label class="setup-label" for="setting-location-search">Location</label>
             <div class="location-picker">
@@ -904,11 +914,11 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Scan seed packages</div>
-          <div class="empty-sub" style="text-align:left">In Add or Edit Plant, use Seed package to scan a barcode or QR code. Some browsers do not support direct barcode reading yet, so the code can also be typed manually. Use guide fills common care defaults when the plant type is recognized.</div>
+          <div class="empty-sub" style="text-align:left">In Add or Edit Plant, use Seed package to scan a barcode or QR code. The scanner supports common UPC, EAN, Code 128, and QR formats. A numeric barcode saves the package ID, but it does not reveal the seed variety by itself. Use guide fills common care defaults when plant text is recognized.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">7. Use AI carefully</div>
-          <div class="empty-sub" style="text-align:left">Plant detail pages show built-in guide notes. Private AI advice works only after an AI helper URL is added in Setup. The app does not store or expose an AI API key in the browser.</div>
+          <div class="empty-sub" style="text-align:left">Plant detail pages show built-in guide notes. Ask AI returns plant-specific guidance and a suggested care plan when the private service is available. Review suggestions in the edit form before saving. The app never stores an AI key on the phone.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">8. Add to phone home screen</div>
@@ -936,6 +946,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   </div>
 </div>
 
+<script src="vendor/zxing-browser.min.js"></script>
 <script>
 // ============================
 // DATA
@@ -991,6 +1002,7 @@ const state = {
 const storageKey = 'brittanys-garden-mobile-v3';
 let barcodeStream = null;
 let barcodeScanTimer = null;
+let zxingControls = null;
 
 function hydrateState() {
   try {
@@ -1600,25 +1612,90 @@ function smartAdviceItems(p) {
   return items;
 }
 
+function aiEndpoint() {
+  const configured = String(state.settings.aiEndpoint || '').trim();
+  if (configured) return configured;
+  if (!/^https?:$/.test(location.protocol)) return '';
+  if (location.hostname.endsWith('.github.io')) return 'https://brittanys-garden.vercel.app/api/garden-advice';
+  return '/api/garden-advice';
+}
+
+function cadenceSuggestionText(label, cadence) {
+  if (!cadence) return '';
+  const unit = cadence.count === 1 ? cadence.unit : `${cadence.unit}s`;
+  return `<div class="ai-suggestion-row">${label}: every ${escapeHtml(cadence.count)} ${escapeHtml(unit)}. ${escapeHtml(cadence.reason || '')}</div>`;
+}
+
+function normalizeAiCadence(value) {
+  const count = Number(value?.count);
+  if (!Number.isInteger(count) || count < 1 || count > 30) return null;
+  return {
+    count,
+    unit: value.unit === 'week' ? 'week' : 'day',
+    reason: String(value.reason || '').slice(0, 180)
+  };
+}
+
+function normalizeAiSuggestions(value) {
+  if (!value || typeof value !== 'object') return null;
+  return {
+    water: normalizeAiCadence(value.water),
+    feed: normalizeAiCadence(value.feed),
+    harvest: normalizeAiCadence(value.harvest),
+    sun: String(value.sun || '').slice(0, 100),
+    harvestCue: String(value.harvestCue || '').slice(0, 180)
+  };
+}
+
+function aiSuggestionsHtml(p) {
+  const suggestions = p.aiSuggestions;
+  if (!suggestions) return '';
+  const cautions = Array.isArray(p.aiCautions) ? p.aiCautions : [];
+  return `<div class="ai-suggestions">
+    <div class="ai-suggestions-title">Suggested plan · ${escapeHtml(p.aiConfidence || 'review')} confidence</div>
+    ${cadenceSuggestionText('Water check', suggestions.water)}
+    ${cadenceSuggestionText('Feed', suggestions.feed)}
+    ${cadenceSuggestionText('Harvest check', suggestions.harvest)}
+    ${suggestions.sun ? `<div class="ai-suggestion-row">Sun: ${escapeHtml(suggestions.sun)}</div>` : ''}
+    ${suggestions.harvestCue ? `<div class="ai-suggestion-row">Harvest cue: ${escapeHtml(suggestions.harvestCue)}</div>` : ''}
+    ${cautions.map(item => `<div class="ai-caution">Check first: ${escapeHtml(item)}</div>`).join('')}
+    <button class="task-btn task-btn-outline" type="button" data-action="review-ai" data-id="${p.id}">Review in edit form</button>
+  </div>`;
+}
+
 function smartAdviceHtml(p) {
-  const endpointReady = !!String(state.settings.aiEndpoint || '').trim();
+  const endpointReady = !!aiEndpoint();
   const aiText = p.aiAdviceStatus === 'loading'
     ? 'Asking the private AI helper...'
     : p.aiAdvice
     ? p.aiAdvice
     : endpointReady
     ? 'Private AI helper is configured. Tap Ask AI for plant-specific guidance.'
-    : 'Private AI is not configured yet. Built-in guide guidance is shown above.';
+    : 'AI is available on the Vercel app. Built-in guide guidance is still available here.';
 
   return `<div class="smart-card">
     <div class="smart-title">AI / Knowledge</div>
-    <div class="smart-sub">Built-in guide now. Private AI only when an endpoint is configured in Setup.</div>
+    <div class="smart-sub">Built-in guide plus private AI guidance. AI suggestions never change the care plan until saved.</div>
     <div class="smart-list">
       ${smartAdviceItems(p).map(item => `<div class="smart-item">${escapeHtml(item)}</div>`).join('')}
     </div>
     <div class="ai-output">${escapeHtml(aiText)}</div>
-    <button class="task-btn ${endpointReady ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="ask-ai" data-id="${p.id}">${endpointReady ? 'Ask AI' : 'AI setup needed'}</button>
+    ${aiSuggestionsHtml(p)}
+    <button class="task-btn ${endpointReady ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="ask-ai" data-id="${p.id}" ${p.aiAdviceStatus === 'loading' ? 'disabled' : ''}>${p.aiAdviceStatus === 'loading' ? 'Thinking...' : endpointReady ? 'Ask AI' : 'AI setup needed'}</button>
   </div>`;
+}
+
+function reviewAiSuggestions(plantId) {
+  const plant = state.plants.find(item => item.id === plantId);
+  if (!plant?.aiSuggestions) return;
+  openPlantForm(plantId);
+  const suggestions = plant.aiSuggestions;
+  if (suggestions.water) setCadenceControls('plant-water', '', suggestions.water);
+  if (suggestions.feed) setCadenceControls('plant-feed', '', suggestions.feed);
+  if (suggestions.harvest) setCadenceControls('plant-harvest', '', suggestions.harvest);
+  if (suggestions.sun) document.getElementById('plant-sun').value = suggestions.sun;
+  if (suggestions.harvestCue) document.getElementById('plant-harvest-cue').value = suggestions.harvestCue;
+  showToast('✨', 'Suggestions ready to review', 'Nothing changes until you tap Save plant.');
 }
 
 function openPlantForm(id) {
@@ -1754,12 +1831,6 @@ async function startBarcodeScan() {
   const video = document.getElementById('barcode-video');
   if (!panel || !video) return;
 
-  if (!('BarcodeDetector' in globalThis)) {
-    panel.classList.remove('hidden');
-    panel.setAttribute('aria-hidden', 'false');
-    setScannerStatus('This browser cannot read barcodes directly yet. Enter the code manually, or try Chrome/Edge on a supported phone.');
-    return;
-  }
   if (!navigator.mediaDevices?.getUserMedia) {
     panel.classList.remove('hidden');
     panel.setAttribute('aria-hidden', 'false');
@@ -1772,38 +1843,60 @@ async function startBarcodeScan() {
   setScannerStatus('Starting camera...');
 
   try {
-    const desired = ['qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
-    const supported = typeof BarcodeDetector.getSupportedFormats === 'function'
-      ? await BarcodeDetector.getSupportedFormats()
-      : desired;
-    const formats = desired.filter(format => supported.includes(format));
-    const detector = new BarcodeDetector({ formats: formats.length ? formats : desired });
-    barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    video.srcObject = barcodeStream;
-    await video.play();
-    setScannerStatus('Scanning... hold the package steady in good light.');
+    if ('BarcodeDetector' in globalThis) {
+      const desired = ['qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
+      const supported = typeof BarcodeDetector.getSupportedFormats === 'function'
+        ? await BarcodeDetector.getSupportedFormats()
+        : desired;
+      const formats = desired.filter(format => supported.includes(format));
+      const detector = new BarcodeDetector({ formats: formats.length ? formats : desired });
+      barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      video.srcObject = barcodeStream;
+      await video.play();
+      setScannerStatus('Scanning... hold the package steady in good light.');
 
-    const scan = async () => {
-      if (!barcodeStream) return;
-      try {
-        const codes = await detector.detect(video);
-        if (codes.length && codes[0].rawValue) {
-          const value = codes[0].rawValue;
-          stopBarcodeScan();
-          applyScannedSeedCode(value);
-          return;
+      const scan = async () => {
+        if (!barcodeStream) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length && codes[0].rawValue) {
+            const value = codes[0].rawValue;
+            stopBarcodeScan();
+            applyScannedSeedCode(value);
+            return;
+          }
+        } catch (error) {
+          setScannerStatus('Scanner had trouble reading the package. Try again or enter the code manually.');
         }
-      } catch (error) {
-        setScannerStatus('Scanner had trouble reading the package. Try again or enter the code manually.');
+        barcodeScanTimer = window.setTimeout(scan, 350);
+      };
+      scan();
+      return;
+    }
+
+    if (!globalThis.ZXingBrowser?.BrowserMultiFormatReader) {
+      throw new Error('Scanner library unavailable');
+    }
+
+    const reader = new ZXingBrowser.BrowserMultiFormatReader();
+    zxingControls = await reader.decodeFromConstraints(
+      { video: { facingMode: { ideal: 'environment' } }, audio: false },
+      video,
+      (result, error, controls) => {
+        if (!result) return;
+        const value = typeof result.getText === 'function' ? result.getText() : result.text;
+        controls.stop();
+        zxingControls = null;
+        stopBarcodeScan();
+        applyScannedSeedCode(value);
       }
-      barcodeScanTimer = window.setTimeout(scan, 350);
-    };
-    scan();
+    );
+    setScannerStatus('Scanning... hold the package steady in good light.');
   } catch (error) {
     stopBarcodeScan(false);
     panel.classList.remove('hidden');
     panel.setAttribute('aria-hidden', 'false');
-    setScannerStatus('Camera permission was not available. Enter the code manually.');
+    setScannerStatus('Camera or scanner access was not available. Enter the code manually.');
   }
 }
 
@@ -1812,12 +1905,19 @@ function stopBarcodeScan(hidePanel = true) {
     clearTimeout(barcodeScanTimer);
     barcodeScanTimer = null;
   }
+  if (zxingControls) {
+    zxingControls.stop();
+    zxingControls = null;
+  }
   if (barcodeStream) {
     barcodeStream.getTracks().forEach(track => track.stop());
     barcodeStream = null;
   }
   const video = document.getElementById('barcode-video');
-  if (video) video.srcObject = null;
+  if (video?.srcObject) {
+    video.srcObject.getTracks?.().forEach(track => track.stop());
+    video.srcObject = null;
+  }
   const panel = document.getElementById('scanner-panel');
   if (panel && hidePanel) {
     panel.classList.add('hidden');
@@ -2319,7 +2419,7 @@ function logCare(plantId, type) {
 async function askAiAdvice(plantId) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
-  const endpoint = String(state.settings.aiEndpoint || '').trim();
+  const endpoint = aiEndpoint();
   if (!endpoint) {
     p.aiAdvice = 'AI needs a private helper URL in Setup before it can answer. The app will not expose an API key in the browser.';
     p.aiAdviceStatus = 'missing';
@@ -2358,23 +2458,26 @@ async function askAiAdvice(plantId) {
         guide: smartAdviceItems(p)
       })
     });
-    if (!response.ok) throw new Error('AI helper request failed');
     const data = await response.json();
-    const text = Array.isArray(data.items)
-      ? data.items.join('\n')
-      : data.advice || data.text || data.message || '';
+    if (!response.ok) throw new Error(data.error || 'AI helper request failed');
+    const text = data.advice || data.text || data.message || '';
     if (!text) throw new Error('AI helper returned no advice');
     p.aiAdvice = String(text).slice(0, 1200);
+    p.aiSuggestions = normalizeAiSuggestions(data.suggestions);
+    p.aiConfidence = ['low', 'medium', 'high'].includes(data.confidence) ? data.confidence : 'review';
+    p.aiCautions = Array.isArray(data.cautions)
+      ? data.cautions.slice(0, 3).map(item => String(item).slice(0, 180))
+      : [];
     p.aiAdviceAt = new Date().toISOString();
     p.aiAdviceStatus = 'ready';
     saveState();
     renderDetail();
     showToast('✨', 'AI advice ready', 'Private helper returned guidance.');
   } catch (error) {
-    p.aiAdvice = 'AI helper did not respond. Check the private endpoint URL in Setup.';
+    p.aiAdvice = error.message || 'AI helper did not respond. Try again shortly.';
     p.aiAdviceStatus = 'error';
     renderDetail();
-    showToast('!', 'AI unavailable', 'Check the helper URL.');
+    showToast('!', 'AI unavailable', 'Try again shortly.');
   }
 }
 
@@ -2511,6 +2614,7 @@ document.addEventListener('click', event => {
   if (action === 'stop-barcode-scan') stopBarcodeScan();
   if (action === 'use-knowledge') applyGuideToForm();
   if (action === 'ask-ai') askAiAdvice(button.dataset.id);
+  if (action === 'review-ai') reviewAiSuggestions(button.dataset.id);
   if (action === 'search-location') searchLocation();
   if (action === 'select-location') selectLocation(button);
   if (action === 'refresh-weather') fetchWeather();

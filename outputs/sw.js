@@ -1,9 +1,10 @@
-const CACHE_NAME = 'brittanys-garden-v9';
+const CACHE_NAME = 'brittanys-garden-v10';
 const APP_ASSETS = [
   './',
   './index.html',
   './brittanys-garden-cozy-companion.html',
   './manifest.webmanifest',
+  './vendor/zxing-browser.min.js',
   './assets/tomato.png',
   './assets/basil.png',
   './assets/pepper.png',

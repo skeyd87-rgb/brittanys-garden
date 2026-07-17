@@ -1,0 +1,8 @@
+node_modules/
+.git/
+.claude/
+.playwright-mcp/
+work/
+cozy-companion-*.png
+design-qa.md
+outputs/brittanys-garden-prototype.html

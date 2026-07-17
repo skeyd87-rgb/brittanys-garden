@@ -1,6 +1,6 @@
 # Brittany's Garden
 
-A browser prototype for Brittany's container garden care companion.
+A mobile PWA for Brittany's personal container garden care.
 
 ## Current App
 
@@ -10,9 +10,10 @@ The current build is a static mobile web app that can be added to a phone home s
 
 - Blank-slate first run
 - Add and edit plants
-- Seed package barcode / QR capture with manual fallback
+- Seed package UPC, EAN, Code 128, and QR capture with manual fallback
 - Built-in plant guide presets for common container plants
-- Private AI helper hook via configurable endpoint
+- Private AI guidance through a Vercel Function and AI Gateway
+- Reviewed AI care suggestions that prefill the edit form before saving
 - Per-plant care directions for watering, feeding, and harvest cues
 - Repeat-aware due dates from notes like "in 3 days" plus plant and garden-wide 7-day calendars
 - Selectable location search
@@ -35,9 +36,17 @@ The current PWA tracks care inside the app. It does not send phone push notifica
 
 ## Barcode and AI Limits
 
-Barcode scanning uses the browser's native BarcodeDetector API when available. Browser support is uneven, so the app also lets Brittany type the package code manually.
+Barcode scanning uses the browser's native BarcodeDetector API when available and a bundled ZXing fallback elsewhere. A numeric barcode identifies the package code, not the seed variety, so plant name/type still matter.
 
-AI advice is not called directly from the public GitHub Pages app. A private helper endpoint is required so an AI API key is never exposed in browser code.
+AI advice runs in `api/garden-advice.js` through Vercel AI Gateway. Deployed Vercel Functions use an automatically supplied OIDC credential, so no AI API key is exposed in browser code. The endpoint applies origin checks, bounded inputs and outputs, and a best-effort per-instance request limit. Configure a Vercel project budget for durable cost control.
+
+## Vercel Deployment
+
+The repository is connected to the `brittanys-garden` Vercel project. The app uses `/api/garden-advice` automatically on Vercel, and the GitHub Pages build calls the same private service. Set `ALLOWED_ORIGINS` only when adding another frontend origin.
+
+Vercel requires a valid billing method on the team before AI Gateway unlocks its included credits. Add that once in the Vercel AI Gateway dashboard, then set a small monthly budget before giving Brittany the AI button.
+
+For local API development, create an AI Gateway key and set `AI_GATEWAY_API_KEY` in `.env.local`. Environment files are ignored by Git.
 
 ## Weather Source
 

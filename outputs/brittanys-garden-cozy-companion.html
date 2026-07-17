@@ -327,6 +327,16 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .smart-list { display: grid; gap: 8px; margin-top: 12px; }
 .smart-item { background: #f8f4eb; border-radius: 14px; padding: 10px 12px; font-size: 13px; color: #5e6a52; font-weight: 800; line-height: 1.35; }
 .ai-output { margin-top: 12px; font-size: 13px; color: #33442f; font-weight: 700; line-height: 1.45; background: #eef2e6; border-radius: 14px; padding: 12px; white-space: pre-wrap; }
+.ai-chat { display: grid; gap: 8px; margin-top: 14px; }
+.ai-message { max-width: 92%; border-radius: 14px; padding: 10px 12px; font-size: 13px; font-weight: 700; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-message-assistant { background: #eef2e6; color: #33442f; }
+.ai-message-user { background: #f6e3d3; color: #594438; margin-left: auto; }
+.ai-chat-empty { color: #8a8270; font-size: 13px; font-weight: 700; line-height: 1.4; }
+.ai-chat-status { color: #8a684f; font-size: 12px; font-weight: 800; margin-top: 8px; }
+.ai-chat-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-top: 12px; }
+.ai-question { width: 100%; min-height: 48px; max-height: 120px; resize: vertical; border: 1.5px solid #d8cfb8; border-radius: 14px; padding: 11px 12px; background: #fffdf7; color: #33442f; font: 700 14px 'Nunito', sans-serif; }
+.ai-question:focus { outline: 3px solid #e7efdd; border-color: #6a8d5b; }
+.ai-send { width: auto; min-width: 72px; margin-top: 0; min-height: 48px; }
 .ai-suggestions { margin-top: 12px; border-top: 1px solid #e8dfcc; padding-top: 12px; }
 .ai-suggestions-title { font-size: 13px; font-weight: 900; color: #33442f; }
 .ai-suggestion-row { margin-top: 7px; font-size: 12px; font-weight: 800; color: #5e6a52; line-height: 1.4; }
@@ -563,6 +573,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .detail-name { font-size: 30px; }
   .mood-badge { padding: 7px 10px; }
   .log-buttons { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .ai-chat-compose { grid-template-columns: 1fr; }
+  .ai-send { width: 100%; }
   .setup-row { gap: 16px; align-items: flex-start; flex-direction: column; }
   .field-grid { grid-template-columns: 1fr; }
   .scan-row { grid-template-columns: 1fr; }
@@ -918,7 +930,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">7. Use AI carefully</div>
-          <div class="empty-sub" style="text-align:left">Plant detail pages show built-in guide notes. Ask AI returns plant-specific guidance and a suggested care plan when the private service is available. Review suggestions in the edit form before saving. The app never stores an AI key on the phone.</div>
+          <div class="empty-sub" style="text-align:left">Open a plant, type a specific question in Ask about, and tap Send. Ask follow-up questions in the same conversation. AI may suggest care-plan changes, but nothing changes until reviewed in the edit form and saved. The app never stores an AI key on the phone.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">8. Add to phone home screen</div>
@@ -1638,13 +1650,37 @@ function normalizeAiCadence(value) {
 
 function normalizeAiSuggestions(value) {
   if (!value || typeof value !== 'object') return null;
-  return {
+  const normalized = {
     water: normalizeAiCadence(value.water),
     feed: normalizeAiCadence(value.feed),
     harvest: normalizeAiCadence(value.harvest),
     sun: String(value.sun || '').slice(0, 100),
     harvestCue: String(value.harvestCue || '').slice(0, 180)
   };
+  return normalized.water || normalized.feed || normalized.harvest || normalized.sun || normalized.harvestCue
+    ? normalized
+    : null;
+}
+
+function aiConversation(p) {
+  const saved = Array.isArray(p.aiConversation) ? p.aiConversation : [];
+  const clean = saved
+    .filter(item => ['user', 'assistant'].includes(item?.role) && item?.content)
+    .slice(-12)
+    .map(item => ({ role: item.role, content: String(item.content).slice(0, 900) }));
+  if (clean.length) return clean;
+  if (p.aiAdvice && p.aiAdviceStatus === 'ready') {
+    return [{ role: 'assistant', content: String(p.aiAdvice).slice(0, 900) }];
+  }
+  return [];
+}
+
+function aiConversationHtml(p) {
+  const conversation = aiConversation(p);
+  if (!conversation.length) {
+    return '<div class="ai-chat-empty">Ask a question about this plant, or start with a general care check.</div>';
+  }
+  return conversation.map(item => `<div class="ai-message ai-message-${item.role}">${escapeHtml(item.content)}</div>`).join('');
 }
 
 function aiSuggestionsHtml(p) {
@@ -1665,23 +1701,27 @@ function aiSuggestionsHtml(p) {
 
 function smartAdviceHtml(p) {
   const endpointReady = !!aiEndpoint();
-  const aiText = p.aiAdviceStatus === 'loading'
-    ? 'Asking the private AI helper...'
-    : p.aiAdvice
-    ? p.aiAdvice
-    : endpointReady
-    ? 'Private AI helper is configured. Tap Ask AI for plant-specific guidance.'
-    : 'AI is available on the Vercel app. Built-in guide guidance is still available here.';
+  const conversation = aiConversation(p);
+  const status = p.aiAdviceStatus === 'loading'
+    ? '<div class="ai-chat-status">Thinking...</div>'
+    : p.aiAdviceStatus === 'error' || p.aiAdviceStatus === 'missing'
+    ? `<div class="ai-chat-status">${escapeHtml(p.aiAdvice || 'AI is unavailable right now.')}</div>`
+    : '';
 
   return `<div class="smart-card">
-    <div class="smart-title">AI / Knowledge</div>
-    <div class="smart-sub">Built-in guide plus private AI guidance. AI suggestions never change the care plan until saved.</div>
+    <div class="smart-title">Ask about ${escapeHtml(p.name)}</div>
+    <div class="smart-sub">Have a conversation about this plant. AI suggestions never change the care plan until saved.</div>
     <div class="smart-list">
       ${smartAdviceItems(p).map(item => `<div class="smart-item">${escapeHtml(item)}</div>`).join('')}
     </div>
-    <div class="ai-output">${escapeHtml(aiText)}</div>
+    <div class="ai-chat">${aiConversationHtml(p)}</div>
+    ${status}
     ${aiSuggestionsHtml(p)}
-    <button class="task-btn ${endpointReady ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="ask-ai" data-id="${p.id}" ${p.aiAdviceStatus === 'loading' ? 'disabled' : ''}>${p.aiAdviceStatus === 'loading' ? 'Thinking...' : endpointReady ? 'Ask AI' : 'AI setup needed'}</button>
+    ${conversation.length ? '' : `<button class="task-btn task-btn-outline" type="button" data-action="start-ai" data-id="${p.id}" ${!endpointReady || p.aiAdviceStatus === 'loading' ? 'disabled' : ''}>Start with a care check</button>`}
+    <div class="ai-chat-compose">
+      <textarea class="ai-question" id="ai-question" data-plant-id="${p.id}" maxlength="500" rows="2" placeholder="Ask about yellow leaves, watering, harvest..." ${!endpointReady || p.aiAdviceStatus === 'loading' ? 'disabled' : ''}></textarea>
+      <button class="task-btn task-btn-primary ai-send" type="button" data-action="send-ai" data-id="${p.id}" ${!endpointReady || p.aiAdviceStatus === 'loading' ? 'disabled' : ''}>Send</button>
+    </div>
   </div>`;
 }
 
@@ -2416,7 +2456,7 @@ function logCare(plantId, type) {
   if (state.scr === 'journal') renderJournal();
 }
 
-async function askAiAdvice(plantId) {
+async function askAiAdvice(plantId, starter = false) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
   const endpoint = aiEndpoint();
@@ -2428,7 +2468,21 @@ async function askAiAdvice(plantId) {
     return;
   }
 
+  const questionInput = document.getElementById('ai-question');
+  const question = starter ? '' : String(questionInput?.value || '').trim();
+  if (!starter && !question) {
+    showToast('?', 'Ask a question', 'Type what you want to know about this plant.');
+    questionInput?.focus();
+    return;
+  }
+
+  const priorConversation = aiConversation(p).slice(-6);
+  p.aiConversation = [...aiConversation(p)];
+  if (question) p.aiConversation.push({ role: 'user', content: question.slice(0, 500) });
+  p.aiConversation = p.aiConversation.slice(-12);
   p.aiAdviceStatus = 'loading';
+  p.aiAdvice = '';
+  saveState();
   renderDetail();
 
   try {
@@ -2455,7 +2509,9 @@ async function askAiAdvice(plantId) {
           longitude: state.settings.longitude
         },
         weather: state.weather.status === 'ready' ? state.weather : null,
-        guide: smartAdviceItems(p)
+        guide: smartAdviceItems(p),
+        question,
+        history: priorConversation
       })
     });
     const data = await response.json();
@@ -2463,6 +2519,8 @@ async function askAiAdvice(plantId) {
     const text = data.advice || data.text || data.message || '';
     if (!text) throw new Error('AI helper returned no advice');
     p.aiAdvice = String(text).slice(0, 1200);
+    p.aiConversation.push({ role: 'assistant', content: String(text).slice(0, 900) });
+    p.aiConversation = p.aiConversation.slice(-12);
     p.aiSuggestions = normalizeAiSuggestions(data.suggestions);
     p.aiConfidence = ['low', 'medium', 'high'].includes(data.confidence) ? data.confidence : 'review';
     p.aiCautions = Array.isArray(data.cautions)
@@ -2472,10 +2530,11 @@ async function askAiAdvice(plantId) {
     p.aiAdviceStatus = 'ready';
     saveState();
     renderDetail();
-    showToast('✨', 'AI advice ready', 'Private helper returned guidance.');
+    showToast('✨', 'Answer ready', 'Ask another question to continue.');
   } catch (error) {
     p.aiAdvice = error.message || 'AI helper did not respond. Try again shortly.';
     p.aiAdviceStatus = 'error';
+    saveState();
     renderDetail();
     showToast('!', 'AI unavailable', 'Try again shortly.');
   }
@@ -2613,11 +2672,19 @@ document.addEventListener('click', event => {
   if (action === 'start-barcode-scan') startBarcodeScan();
   if (action === 'stop-barcode-scan') stopBarcodeScan();
   if (action === 'use-knowledge') applyGuideToForm();
-  if (action === 'ask-ai') askAiAdvice(button.dataset.id);
+  if (action === 'start-ai') askAiAdvice(button.dataset.id, true);
+  if (action === 'send-ai') askAiAdvice(button.dataset.id);
   if (action === 'review-ai') reviewAiSuggestions(button.dataset.id);
   if (action === 'search-location') searchLocation();
   if (action === 'select-location') selectLocation(button);
   if (action === 'refresh-weather') fetchWeather();
+});
+
+document.addEventListener('keydown', event => {
+  if (!event.target.classList?.contains('ai-question')) return;
+  if (event.key !== 'Enter' || event.shiftKey) return;
+  event.preventDefault();
+  askAiAdvice(event.target.dataset.plantId);
 });
 
 document.getElementById('back-link').addEventListener('click', () => navigate('planters'));

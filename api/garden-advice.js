@@ -15,7 +15,7 @@ export const adviceSchema = z.object({
     harvest: cadenceSchema.nullable(),
     sun: z.string().max(100),
     harvestCue: z.string().max(180)
-  }),
+  }).nullable(),
   confidence: z.enum(['low', 'medium', 'high']),
   cautions: z.array(z.string().min(1).max(180)).max(3)
 });
@@ -45,7 +45,12 @@ const requestSchema = z.object({
     precipitation: z.number(),
     updatedAt: z.string().max(40)
   }).nullable(),
-  guide: z.array(z.string().max(240)).max(8)
+  guide: z.array(z.string().max(240)).max(8),
+  question: z.string().max(500).default(''),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().min(1).max(900)
+  })).max(6).default([])
 });
 
 const requestLog = new Map();
@@ -93,6 +98,12 @@ export function parseGardenRequest(body) {
 
 export function buildGardenPrompt(input) {
   const numericBarcode = /^\d{6,18}$/.test(input.plant.seedCode);
+  const conversation = input.history.length
+    ? `Recent conversation: ${JSON.stringify(input.history)}`
+    : 'Recent conversation: none';
+  const request = input.question
+    ? `Brittany's current question: ${input.question}\nAnswer that question directly before adding any supporting detail. Return care-plan suggestions only when this answer should change the saved schedule.`
+    : 'No question was supplied. Give a concise starter care check with practical next steps and a suggested schedule.';
   return [
     `Today is ${input.today}. Give practical container-gardening guidance for this one plant.`,
     'The gardener is a home gardener. Be concise, cautious, and specific about what to do next.',
@@ -105,7 +116,9 @@ export function buildGardenPrompt(input) {
     `Plant data: ${JSON.stringify(input.plant)}`,
     `Garden data: ${JSON.stringify(input.garden)}`,
     `Current weather observation: ${JSON.stringify(input.weather)}`,
-    `Built-in guide context: ${JSON.stringify(input.guide)}`
+    `Built-in guide context: ${JSON.stringify(input.guide)}`,
+    conversation,
+    request
   ].join('\n');
 }
 
@@ -148,9 +161,9 @@ export default async function handler(req, res) {
       output: Output.object({
         schema: adviceSchema,
         name: 'garden_advice',
-        description: 'Conservative care advice and optional editable care cadence suggestions.'
+        description: 'A direct answer plus optional editable care cadence suggestions when relevant.'
       }),
-      system: 'You are a careful gardening knowledge assistant. Never pretend a barcode reveals product data. Avoid pesticide, disease, or food-safety certainty. Suggestions must be reviewed by the gardener.',
+      system: 'You are Brittany\'s careful gardening assistant. Continue the supplied conversation naturally and answer her current question directly. Never pretend a barcode reveals product data. Avoid pesticide, disease, or food-safety certainty. Suggestions must be reviewed by the gardener.',
       prompt: buildGardenPrompt(input),
       maxOutputTokens: 700,
       temperature: 0.2,

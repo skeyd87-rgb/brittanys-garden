@@ -22,7 +22,9 @@ const request = {
     longitude: -79.99
   },
   weather: null,
-  guide: ['Guide match: Tomato.']
+  guide: ['Guide match: Tomato.'],
+  question: '',
+  history: []
 };
 
 test('accepts bounded garden context', () => {
@@ -55,4 +57,25 @@ test('validates structured advice', () => {
     cautions: ['Adjust watering after rain.']
   });
   assert.equal(parsed.suggestions.water.count, 3);
+});
+
+test('includes the current question and recent conversation', () => {
+  const prompt = buildGardenPrompt({
+    ...request,
+    question: 'Why are the lower leaves yellow?',
+    history: [{ role: 'assistant', content: 'Check the soil before watering.' }]
+  });
+  assert.match(prompt, /Why are the lower leaves yellow/);
+  assert.match(prompt, /Check the soil before watering/);
+  assert.match(prompt, /Answer that question directly/);
+});
+
+test('allows a conversational answer without schedule changes', () => {
+  const parsed = adviceSchema.parse({
+    advice: 'A few older lower leaves can yellow naturally.',
+    suggestions: null,
+    confidence: 'medium',
+    cautions: []
+  });
+  assert.equal(parsed.suggestions, null);
 });

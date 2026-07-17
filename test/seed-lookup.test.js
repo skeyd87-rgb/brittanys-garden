@@ -7,6 +7,7 @@ import {
   normalizeBarcode,
   normalizeCatalogItem,
   parseSeedLookupRequest,
+  seedDetailsNeedPhotos,
   seedExtractionSchema
 } from '../api/seed-lookup.js';
 
@@ -79,6 +80,23 @@ test('canonicalizes catalog-backed plant types', () => {
   }, { title: 'Burpee Tomato Best Boy Hybrid Seed Packet' });
   assert.equal(result.name, 'Best Boy Hybrid Tomato');
   assert.equal(result.kind, 'Tomato');
+});
+
+test('requests more photos while printed packet details are incomplete', () => {
+  assert.equal(seedDetailsNeedPhotos({
+    isSeedPackage: true,
+    confidence: 'high',
+    plantingDepth: '',
+    spacing: '',
+    daysToMaturity: '70 days'
+  }), true);
+  assert.equal(seedDetailsNeedPhotos({
+    isSeedPackage: true,
+    confidence: 'high',
+    plantingDepth: '1/4 inch',
+    spacing: '18 inches',
+    daysToMaturity: '70 days'
+  }), false);
 });
 
 test('validates a structured seed extraction', () => {

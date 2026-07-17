@@ -124,6 +124,14 @@ export function finalizeSeedExtraction(value, catalog) {
   };
 }
 
+export function seedDetailsNeedPhotos(extraction) {
+  return !extraction.isSeedPackage
+    || extraction.confidence === 'low'
+    || !extraction.plantingDepth
+    || !extraction.spacing
+    || !extraction.daysToMaturity;
+}
+
 function clientKey(req) {
   return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown')
     .split(',')[0]
@@ -251,10 +259,7 @@ export default async function handler(req, res) {
     });
     const extraction = finalizeSeedExtraction(result.output, catalog);
     const source = catalog && input.images.length ? 'catalog_and_photos' : catalog ? 'catalog' : 'packet_photos';
-    const lacksPacketDetails = !extraction.plantingDepth || !extraction.spacing || !extraction.daysToMaturity;
-    const needsPhotos = !extraction.isSeedPackage
-      || extraction.confidence === 'low'
-      || (!input.images.length && lacksPacketDetails);
+    const needsPhotos = seedDetailsNeedPhotos(extraction);
     return json(res, 200, {
       status: extraction.isSeedPackage ? 'matched' : 'not_seed',
       barcode: input.barcode,
@@ -264,7 +269,9 @@ export default async function handler(req, res) {
       needsPhotos,
       message: extraction.isSeedPackage
         ? needsPhotos
-          ? 'Catalog identity found. Add packet photos for planting details.'
+          ? input.images.length
+            ? 'Some packet details are still missing. Add or retake clear front and back photos.'
+            : 'Catalog identity found. Add packet photos for planting details.'
           : 'Seed details are ready to review.'
         : 'The supplied result does not clearly identify a seed package.'
     });

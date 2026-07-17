@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildSeedPrompt,
+  finalizeSeedExtraction,
   lookupCatalogItem,
   normalizeBarcode,
   normalizeCatalogItem,
@@ -47,6 +48,23 @@ test('prompt distinguishes catalog evidence from barcode digits', () => {
   });
   assert.match(prompt, /Do not claim a barcode identifies a product/i);
   assert.match(prompt, /Packet photos supplied: 2/);
+  assert.match(prompt, /Return water, feed, and harvest as null/);
+});
+
+test('normalizes identity and removes model-proposed cadences', () => {
+  const result = finalizeSeedExtraction({
+    name: 'Tomato',
+    kind: 'Tomato (seed packet)',
+    variety: 'Best Boy Hybrid',
+    brand: '',
+    water: { count: 14, unit: 'day', reason: 'Model guess' },
+    feed: null,
+    harvest: null
+  }, { brand: 'Burpee' });
+  assert.equal(result.name, 'Best Boy Hybrid Tomato');
+  assert.equal(result.kind, 'Tomato');
+  assert.equal(result.brand, 'Burpee');
+  assert.equal(result.water, null);
 });
 
 test('validates a structured seed extraction', () => {

@@ -85,9 +85,33 @@ export function buildSeedPrompt({ barcode, catalog, imageCount }) {
     'Set isSeedPackage false if the evidence is not clearly a seed packet or plant-start package.',
     'Use a concise plant name such as Roma Tomato. Keep variety separate when visible.',
     'Extract planting depth, spacing, and days to maturity only when visible or present in catalog text; otherwise return empty strings.',
-    'For water, feed, and harvest, provide conservative reminder cadences suitable for a container gardener when the plant type is clear. These are inspection reminders, not guarantees.',
+    'Return water, feed, and harvest as null. The app applies bounded care-guide schedules after the gardener approves the identity.',
     'State uncertainty in cautions and lower confidence when the variety, packet text, or growth stage is unclear.'
   ].join('\n');
+}
+
+export function finalizeSeedExtraction(value, catalog) {
+  const kind = String(value.kind || '')
+    .replace(/\s*\((?:seed packet|seeds?)\)\s*/gi, ' ')
+    .replace(/\bseed packet\b|\bseeds?\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+  const variety = String(value.variety || '').trim().slice(0, 120);
+  let name = String(value.name || '').trim().slice(0, 120);
+  if (variety && !name.toLowerCase().includes(variety.toLowerCase())) {
+    name = `${variety} ${kind || name}`.trim().slice(0, 120);
+  }
+  return {
+    ...value,
+    name,
+    kind,
+    variety,
+    brand: String(value.brand || catalog?.brand || '').trim().slice(0, 100),
+    water: null,
+    feed: null,
+    harvest: null
+  };
 }
 
 function clientKey(req) {
@@ -215,17 +239,23 @@ export default async function handler(req, res) {
       maxRetries: 1,
       timeout: 25_000
     });
-    const extraction = result.output;
+    const extraction = finalizeSeedExtraction(result.output, catalog);
     const source = catalog && input.images.length ? 'catalog_and_photos' : catalog ? 'catalog' : 'packet_photos';
+    const lacksPacketDetails = !extraction.plantingDepth || !extraction.spacing || !extraction.daysToMaturity;
+    const needsPhotos = !extraction.isSeedPackage
+      || extraction.confidence === 'low'
+      || (!input.images.length && lacksPacketDetails);
     return json(res, 200, {
       status: extraction.isSeedPackage ? 'matched' : 'not_seed',
       barcode: input.barcode,
       source,
       catalog,
       extraction,
-      needsPhotos: !extraction.isSeedPackage || extraction.confidence === 'low',
+      needsPhotos,
       message: extraction.isSeedPackage
-        ? 'Seed details are ready to review.'
+        ? needsPhotos
+          ? 'Catalog identity found. Add packet photos for planting details.'
+          : 'Seed details are ready to review.'
         : 'The supplied result does not clearly identify a seed package.'
     });
   } catch (error) {

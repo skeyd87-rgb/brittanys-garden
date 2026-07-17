@@ -11,6 +11,7 @@ The current build is a static mobile web app that can be added to a phone home s
 - Blank-slate first run
 - Add and edit plants
 - Seed package UPC, EAN, Code 128, and QR capture with manual fallback
+- Exact UPC/EAN product lookup plus front/back packet photo extraction
 - Built-in plant guide presets for common container plants
 - Private AI guidance through a Vercel Function and AI Gateway
 - Reviewed AI care suggestions that prefill the edit form before saving
@@ -36,7 +37,9 @@ The current PWA tracks care inside the app. It does not send phone push notifica
 
 ## Barcode and AI Limits
 
-Barcode scanning uses the browser's native BarcodeDetector API when available and a bundled ZXing fallback elsewhere. A numeric barcode identifies the package code, not the seed variety, so plant name/type still matter.
+Barcode scanning uses the browser's native BarcodeDetector API when available and a bundled ZXing fallback elsewhere. Standard UPC/EAN values are checked server-side against UPCitemdb's no-key catalog tier. Catalog misses fall back to front/back packet photos analyzed by the private AI service. Results always require review and an explicit Apply before changing the form.
+
+UPCitemdb's free catalog tier is limited to 100 requests per day and 6 lookups per minute. Seed coverage is incomplete, so packet photos are the stronger source for variety, planting depth, spacing, and maturity details.
 
 AI advice runs in `api/garden-advice.js` through Vercel AI Gateway. Deployed Vercel Functions use an automatically supplied OIDC credential, so no AI API key is exposed in browser code. The endpoint applies origin checks, bounded inputs and outputs, and a best-effort per-instance request limit. Configure a Vercel project budget for durable cost control.
 

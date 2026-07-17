@@ -424,9 +424,33 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .field textarea { min-height: 82px; resize: vertical; }
 .cadence-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .cadence-row select { min-width: 0; }
-.scan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.scan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
 .scan-row .task-btn { margin-top: 0; width: auto; white-space: nowrap; }
 .field-help { font-size: 12px; color: #8a8270; font-weight: 700; line-height: 1.35; }
+.seed-lookup-tools { margin-top: 14px; padding-top: 14px; border-top: 1px solid #ebe2d1; }
+.seed-lookup-title { font-size: 14px; font-weight: 900; color: #33442f; }
+.seed-lookup-sub { margin-top: 3px; font-size: 12px; font-weight: 700; line-height: 1.4; color: #7c735f; }
+.seed-photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.seed-photo-label { position: relative; display: grid; gap: 2px; border: 1.5px solid #d8cfb8; border-radius: 12px; padding: 10px 12px; background: #fffdf7; cursor: pointer; min-width: 0; }
+.seed-photo-label:focus-within { outline: 3px solid #e7efdd; border-color: #6a8d5b; }
+.seed-photo-label input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.seed-photo-command { color: #33442f; font-size: 13px; font-weight: 900; }
+.seed-photo-file { color: #8a8270; font-size: 11px; font-weight: 700; overflow-wrap: anywhere; }
+.seed-photo-actions { display: flex; gap: 8px; margin-top: 10px; }
+.seed-photo-actions .task-btn { margin-top: 0; }
+.seed-lookup-status { min-height: 18px; margin-top: 9px; color: #6b6555; font-size: 12px; font-weight: 800; line-height: 1.4; }
+.seed-lookup-status.error { color: #a4543e; }
+.seed-lookup-status.success { color: #4d7040; }
+.seed-review { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ebe2d1; }
+.seed-review-heading { font-family: 'Baloo 2', cursive; color: #33442f; font-size: 18px; font-weight: 800; }
+.seed-review-source { margin-top: 1px; color: #8a8270; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.seed-review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 14px; margin-top: 10px; }
+.seed-review-row { min-width: 0; }
+.seed-review-label { color: #8a8270; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.seed-review-value { margin-top: 1px; color: #33442f; font-size: 13px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.seed-review-note { margin-top: 8px; color: #6b6555; font-size: 12px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.seed-review-actions { display: flex; gap: 8px; margin-top: 12px; }
+.seed-review-actions .task-btn { margin-top: 0; }
 .setting-input { max-width: 230px; text-align: right; }
 .location-picker { width: min(360px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
 .location-search-row { display: flex; gap: 8px; }
@@ -604,6 +628,8 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   .setup-row { gap: 16px; align-items: flex-start; flex-direction: column; }
   .field-grid { grid-template-columns: 1fr; }
   .scan-row { grid-template-columns: 1fr; }
+  .seed-photo-grid, .seed-review-grid { grid-template-columns: 1fr; }
+  .seed-photo-actions, .seed-review-actions { flex-direction: column; }
   .form-actions { flex-direction: column; }
   .setting-input { max-width: none; text-align: left; }
   .location-search-row { flex-direction: column; }
@@ -732,9 +758,31 @@ input, select, textarea { min-width: 0; max-width: 100%; }
               <div class="scan-row">
                 <input id="plant-seed-code" autocomplete="off" placeholder="Scan or enter barcode / QR code">
                 <button class="task-btn task-btn-outline" type="button" data-action="start-barcode-scan">Scan</button>
+                <button class="task-btn task-btn-outline" type="button" data-action="lookup-seed">Look up</button>
                 <button class="task-btn task-btn-outline" type="button" data-action="use-knowledge">Use guide</button>
               </div>
-              <div class="field-help">Barcode stores the package code. QR/text scans can prefill plant type when recognizable.</div>
+              <div class="field-help">Numeric UPC/EAN scans check an exact product catalog. QR/text scans can still use the built-in plant guide.</div>
+              <div class="seed-lookup-tools">
+                <div class="seed-lookup-title">Packet photos</div>
+                <div class="seed-lookup-sub">If lookup misses or details are incomplete, photograph the packet front and back. Photos are sent to the private AI service only after Analyze is tapped.</div>
+                <div class="seed-photo-grid">
+                  <label class="seed-photo-label" for="seed-photo-front">
+                    <input id="seed-photo-front" type="file" accept="image/*" capture="environment">
+                    <span class="seed-photo-command">📷 Front photo</span>
+                    <span class="seed-photo-file" id="seed-photo-front-name">Not selected</span>
+                  </label>
+                  <label class="seed-photo-label" for="seed-photo-back">
+                    <input id="seed-photo-back" type="file" accept="image/*" capture="environment">
+                    <span class="seed-photo-command">📷 Back photo</span>
+                    <span class="seed-photo-file" id="seed-photo-back-name">Not selected</span>
+                  </label>
+                </div>
+                <div class="seed-photo-actions">
+                  <button class="task-btn task-btn-primary" type="button" data-action="analyze-seed-photos">Analyze packet photos</button>
+                </div>
+                <div class="seed-lookup-status" id="seed-lookup-status" role="status">Scan a barcode or add packet photos.</div>
+                <div id="seed-lookup-review"></div>
+              </div>
             </div>
             <div class="field">
               <label for="plant-planter">Planter</label>
@@ -955,7 +1003,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Scan seed packages</div>
-          <div class="empty-sub" style="text-align:left">In Add or Edit Plant, use Seed package to scan a barcode or QR code. The scanner supports common UPC, EAN, Code 128, and QR formats. A numeric barcode saves the package ID, but it does not reveal the seed variety by itself. Use guide fills common care defaults when plant text is recognized.</div>
+          <div class="empty-sub" style="text-align:left">In Add or Edit Plant, scan a UPC/EAN or enter it and tap Look up. Exact catalog matches appear for review. If lookup misses or lacks seed details, photograph the packet front and back and tap Analyze. Check every extracted field, tap Apply these details, then save the plant.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">7. Use AI carefully</div>
@@ -1041,9 +1089,12 @@ const state = {
 };
 
 const storageKey = 'brittanys-garden-mobile-v3';
+const seedLookupCacheKey = 'brittanys-garden-seed-lookups-v1';
 let barcodeStream = null;
 let barcodeScanTimer = null;
 let zxingControls = null;
+let pendingSeedLookup = null;
+const seedPhotoFiles = { front: null, back: null };
 
 function hydrateState() {
   try {
@@ -1251,10 +1302,10 @@ function guideForForm() {
   return findGuideMatch(`${seedCode} ${name} ${kind}`);
 }
 
-function applyGuideToForm(sourceText) {
+function applyGuideToForm(sourceText, quiet = false) {
   const guide = findGuideMatch(sourceText || '') || guideForForm();
   if (!guide) {
-    showToast('🌱', 'No guide match', 'Enter a plant type like tomato, basil, pepper, lettuce, or herb.');
+    if (!quiet) showToast('🌱', 'No guide match', 'Enter a plant type like tomato, basil, pepper, lettuce, or herb.');
     return false;
   }
 
@@ -1661,6 +1712,18 @@ function aiEndpoint() {
   return '/api/garden-advice';
 }
 
+function seedLookupEndpoint() {
+  const advice = aiEndpoint();
+  if (!advice) return '';
+  try {
+    const url = new URL(advice, location.href);
+    url.pathname = url.pathname.replace(/\/garden-advice\/?$/, '/seed-lookup');
+    return url.href;
+  } catch (error) {
+    return '';
+  }
+}
+
 function cadenceSuggestionText(label, cadence) {
   if (!cadence) return '';
   const unit = cadence.count === 1 ? cadence.unit : `${cadence.unit}s`;
@@ -1771,6 +1834,7 @@ function openPlantForm(id) {
   const form = document.getElementById('plant-form');
   const plant = state.plants.find(p => p.id === id);
   if (plant) normalizePlantCare(plant);
+  resetSeedLookupTools();
   document.getElementById('plant-form-title').textContent = plant ? '✏️ Edit plant' : '🌱 Add a plant';
   document.getElementById('plant-id').value = plant?.id || '';
   document.getElementById('plant-name').value = plant?.name || '';
@@ -1793,6 +1857,7 @@ function closePlantForm() {
   document.getElementById('plant-form').reset();
   document.getElementById('plant-id').value = '';
   document.getElementById('plant-form').classList.add('hidden');
+  resetSeedLookupTools();
 }
 
 function syncSettingsControls() {
@@ -1869,6 +1934,263 @@ function selectLocation(button) {
   fetchWeather();
 }
 
+function normalizedLookupBarcode(value) {
+  const barcode = String(value || '').replace(/[\s-]/g, '');
+  return [8, 12, 13, 14].includes(barcode.length) && /^\d+$/.test(barcode) ? barcode : '';
+}
+
+function setSeedLookupStatus(message, tone = '') {
+  const status = document.getElementById('seed-lookup-status');
+  if (!status) return;
+  status.className = `seed-lookup-status${tone ? ` ${tone}` : ''}`;
+  status.textContent = message;
+}
+
+function setSeedLookupBusy(busy) {
+  document.querySelectorAll('[data-action="lookup-seed"], [data-action="analyze-seed-photos"]').forEach(button => {
+    button.disabled = busy;
+  });
+}
+
+function resetSeedLookupTools() {
+  pendingSeedLookup = null;
+  seedPhotoFiles.front = null;
+  seedPhotoFiles.back = null;
+  ['front', 'back'].forEach(side => {
+    const input = document.getElementById(`seed-photo-${side}`);
+    const label = document.getElementById(`seed-photo-${side}-name`);
+    if (input) input.value = '';
+    if (label) label.textContent = 'Not selected';
+  });
+  const review = document.getElementById('seed-lookup-review');
+  if (review) review.innerHTML = '';
+  setSeedLookupBusy(false);
+  setSeedLookupStatus('Scan a barcode or add packet photos.');
+}
+
+function readSeedLookupCache(barcode) {
+  if (!barcode) return null;
+  try {
+    const cache = JSON.parse(localStorage.getItem(seedLookupCacheKey) || '{}');
+    const saved = cache[barcode];
+    if (!saved || Date.now() - Number(saved.savedAt || 0) > 30 * 24 * 60 * 60 * 1000) return null;
+    return saved.response || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeSeedLookupCache(barcode, response) {
+  if (!barcode || response?.status !== 'matched') return;
+  try {
+    const cache = JSON.parse(localStorage.getItem(seedLookupCacheKey) || '{}');
+    cache[barcode] = { savedAt: Date.now(), response };
+    const entries = Object.entries(cache).sort((a, b) => Number(b[1].savedAt || 0) - Number(a[1].savedAt || 0)).slice(0, 20);
+    localStorage.setItem(seedLookupCacheKey, JSON.stringify(Object.fromEntries(entries)));
+  } catch (error) {
+  }
+}
+
+function seedCadenceText(value) {
+  if (!value?.count) return '';
+  const unit = value.count === 1 ? value.unit : `${value.unit}s`;
+  return `Every ${value.count} ${unit}`;
+}
+
+function seedReviewRow(label, value) {
+  if (!value) return '';
+  return `<div class="seed-review-row"><div class="seed-review-label">${escapeHtml(label)}</div><div class="seed-review-value">${escapeHtml(value)}</div></div>`;
+}
+
+function seedSourceLabel(source) {
+  const labels = {
+    catalog: 'Exact barcode catalog match',
+    packet_photos: 'Packet photo analysis',
+    catalog_and_photos: 'Catalog and packet photos'
+  };
+  return labels[source] || 'Seed package review';
+}
+
+function renderSeedLookupReview(response) {
+  const review = document.getElementById('seed-lookup-review');
+  if (!review) return;
+  const extraction = response?.extraction;
+  const catalog = response?.catalog;
+  pendingSeedLookup = extraction?.isSeedPackage ? response : null;
+  setSeedLookupStatus(response?.message || 'Lookup finished.', response?.status === 'matched' ? 'success' : '');
+
+  if (!extraction && !catalog) {
+    review.innerHTML = '';
+    return;
+  }
+
+  const heading = extraction?.name || catalog?.title || 'Catalog result';
+  const rows = [
+    seedReviewRow('Catalog product', catalog?.title || ''),
+    seedReviewRow('Brand', extraction?.brand || catalog?.brand || ''),
+    seedReviewRow('Plant type', extraction?.kind || ''),
+    seedReviewRow('Variety', extraction?.variety || ''),
+    seedReviewRow('Sun', extraction?.sun || ''),
+    seedReviewRow('Water check', seedCadenceText(extraction?.water)),
+    seedReviewRow('Feed', seedCadenceText(extraction?.feed)),
+    seedReviewRow('Harvest check', seedCadenceText(extraction?.harvest)),
+    seedReviewRow('Harvest cue', extraction?.harvestCue || ''),
+    seedReviewRow('Planting depth', extraction?.plantingDepth || ''),
+    seedReviewRow('Spacing', extraction?.spacing || ''),
+    seedReviewRow('Maturity', extraction?.daysToMaturity || ''),
+    seedReviewRow('Confidence', extraction?.confidence || '')
+  ].filter(Boolean).join('');
+  const notes = [
+    ...(Array.isArray(extraction?.notes) ? extraction.notes : []),
+    ...(Array.isArray(extraction?.cautions) ? extraction.cautions.map(item => `Check first: ${item}`) : [])
+  ];
+  review.innerHTML = `<div class="seed-review">
+    <div class="seed-review-heading">${escapeHtml(heading)}</div>
+    <div class="seed-review-source">${escapeHtml(seedSourceLabel(response?.source))}</div>
+    <div class="seed-review-grid">${rows}</div>
+    ${notes.map(item => `<div class="seed-review-note">${escapeHtml(item)}</div>`).join('')}
+    <div class="seed-review-actions">
+      ${extraction?.isSeedPackage ? '<button class="task-btn task-btn-primary" type="button" data-action="apply-seed-result">Apply these details</button>' : ''}
+      <button class="task-btn task-btn-outline" type="button" data-action="dismiss-seed-result">Dismiss</button>
+    </div>
+  </div>`;
+}
+
+async function lookupSeedPackage(value, images = []) {
+  const endpoint = seedLookupEndpoint();
+  if (!endpoint) {
+    setSeedLookupStatus('Seed lookup needs the private Vercel service.', 'error');
+    showToast('!', 'Lookup needs setup', 'Open the deployed app to use seed lookup.');
+    return;
+  }
+
+  const barcode = normalizedLookupBarcode(value);
+  if (!barcode && !images.length) {
+    setSeedLookupStatus('Enter or scan an 8, 12, 13, or 14 digit UPC/EAN.', 'error');
+    showToast('!', 'Check the barcode', 'A standard UPC or EAN is required.');
+    return;
+  }
+
+  if (barcode && !images.length) {
+    const cached = readSeedLookupCache(barcode);
+    if (cached) {
+      renderSeedLookupReview(cached);
+      showToast('📦', 'Saved match found', 'Review the seed details before applying.');
+      return;
+    }
+  }
+
+  if (barcode) document.getElementById('plant-seed-code').value = barcode;
+  setSeedLookupBusy(true);
+  setSeedLookupStatus(images.length ? 'Reading packet photos...' : 'Checking the exact barcode catalog...');
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode, images })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Seed lookup failed');
+    renderSeedLookupReview(data);
+    writeSeedLookupCache(barcode, data);
+    if (data.status === 'matched') {
+      showToast('🌱', 'Seed match ready', 'Review the details, then tap Apply.');
+    } else if (data.needsPhotos) {
+      showToast('📷', 'Packet photos needed', 'Add front and back photos for a stronger match.');
+    }
+  } catch (error) {
+    setSeedLookupStatus(error.message || 'Seed lookup is unavailable right now.', 'error');
+    showToast('!', 'Lookup unavailable', 'Try again or enter the plant manually.');
+  } finally {
+    setSeedLookupBusy(false);
+  }
+}
+
+async function resizeSeedPhoto(file) {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('This photo format could not be read.'));
+      img.src = objectUrl;
+    });
+    const maxSide = 1400;
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Photo processing is unavailable.');
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    let quality = 0.82;
+    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+    while (dataUrl.length > 1_150_000 && quality > 0.52) {
+      quality -= 0.1;
+      dataUrl = canvas.toDataURL('image/jpeg', quality);
+    }
+    const data = dataUrl.split(',')[1] || '';
+    if (data.length > 1_200_000) throw new Error('Photo is still too large. Retake it closer to the packet.');
+    return { mediaType: 'image/jpeg', data };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function analyzeSeedPhotos() {
+  const files = [seedPhotoFiles.front, seedPhotoFiles.back].filter(Boolean);
+  if (!files.length) {
+    setSeedLookupStatus('Choose at least one packet photo first.', 'error');
+    showToast('📷', 'Add a packet photo', 'Front and back photos give the best result.');
+    return;
+  }
+  setSeedLookupBusy(true);
+  setSeedLookupStatus('Preparing packet photos...');
+  try {
+    const images = await Promise.all(files.map(resizeSeedPhoto));
+    await lookupSeedPackage(document.getElementById('plant-seed-code').value, images);
+  } catch (error) {
+    setSeedLookupStatus(error.message || 'The packet photos could not be prepared.', 'error');
+    showToast('!', 'Photo problem', 'Try a clear JPG or PNG photo.');
+  } finally {
+    setSeedLookupBusy(false);
+  }
+}
+
+function applySeedLookupResult() {
+  const extraction = pendingSeedLookup?.extraction;
+  if (!extraction?.isSeedPackage) return;
+  const guide = findGuideMatch(`${extraction.name} ${extraction.kind} ${extraction.variety}`);
+  const name = extraction.name || [extraction.variety, extraction.kind].filter(Boolean).join(' ');
+  if (name) document.getElementById('plant-name').value = name;
+  if (extraction.kind || guide?.kind) document.getElementById('plant-kind').value = extraction.kind || guide.kind;
+  if (extraction.sun || guide?.sun) document.getElementById('plant-sun').value = extraction.sun || guide.sun;
+  if (extraction.harvestCue || guide?.cue) document.getElementById('plant-harvest-cue').value = extraction.harvestCue || guide.cue;
+
+  if (extraction.water) setCadenceControls('plant-water', '', extraction.water);
+  else if (guide?.water) setCadenceValue('plant-water', guide.water);
+  if (extraction.feed) setCadenceControls('plant-feed', '', extraction.feed);
+  else if (guide?.feed) setCadenceValue('plant-feed', guide.feed);
+  if (extraction.harvest) setCadenceControls('plant-harvest', '', extraction.harvest);
+  else if (guide?.harvest) setCadenceValue('plant-harvest', guide.harvest);
+
+  const catalog = pendingSeedLookup.catalog;
+  const additions = [
+    catalog?.title ? `Seed product: ${[extraction.brand || catalog.brand, catalog.title].filter(Boolean).join(' - ')}` : '',
+    extraction.plantingDepth ? `Planting depth: ${extraction.plantingDepth}` : '',
+    extraction.spacing ? `Spacing: ${extraction.spacing}` : '',
+    extraction.daysToMaturity ? `Days to maturity: ${extraction.daysToMaturity}` : '',
+    ...(Array.isArray(extraction.notes) ? extraction.notes : []),
+    ...(Array.isArray(extraction.cautions) ? extraction.cautions.map(item => `Review: ${item}`) : []),
+    guide?.note || ''
+  ].filter(Boolean);
+  const notes = document.getElementById('plant-notes');
+  const lines = [notes.value.trim(), ...additions].filter(Boolean);
+  notes.value = lines.filter((line, index) => lines.indexOf(line) === index).join('\n');
+  setSeedLookupStatus('Details applied. Review the form, then save the plant.', 'success');
+  showToast('🌿', 'Details applied', 'Nothing is saved until you tap Save plant.');
+}
+
 function setScannerStatus(message) {
   const status = document.getElementById('barcode-status');
   if (status) status.textContent = message;
@@ -1882,7 +2204,7 @@ function cleanScanText(value) {
   }
 }
 
-function applyScannedSeedCode(value) {
+async function applyScannedSeedCode(value) {
   const clean = cleanScanText(value);
   if (!clean) return;
   const seedEl = document.getElementById('plant-seed-code');
@@ -1891,8 +2213,14 @@ function applyScannedSeedCode(value) {
   if (notesEl && !notesEl.value.includes(clean)) {
     notesEl.value = [notesEl.value.trim(), `Seed package scan: ${clean}`].filter(Boolean).join('\n');
   }
-  const applied = applyGuideToForm(clean);
-  if (!applied) showToast('📦', 'Package code saved', 'No plant match found, but the scan was stored.');
+  const barcode = normalizedLookupBarcode(clean);
+  if (barcode) {
+    showToast('📦', 'Barcode scanned', 'Checking the product catalog.');
+    await lookupSeedPackage(barcode);
+    return;
+  }
+  const applied = applyGuideToForm(clean, true);
+  if (!applied) showToast('📦', 'Package text saved', 'No plant match found, but the scan was stored.');
 }
 
 async function startBarcodeScan() {
@@ -2701,6 +3029,14 @@ document.addEventListener('click', event => {
   if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
   if (action === 'start-barcode-scan') startBarcodeScan();
   if (action === 'stop-barcode-scan') stopBarcodeScan();
+  if (action === 'lookup-seed') lookupSeedPackage(document.getElementById('plant-seed-code').value);
+  if (action === 'analyze-seed-photos') analyzeSeedPhotos();
+  if (action === 'apply-seed-result') applySeedLookupResult();
+  if (action === 'dismiss-seed-result') {
+    pendingSeedLookup = null;
+    document.getElementById('seed-lookup-review').innerHTML = '';
+    setSeedLookupStatus('Result dismissed. Enter details manually or try clearer photos.');
+  }
   if (action === 'use-knowledge') applyGuideToForm();
   if (action === 'start-ai') askAiAdvice(button.dataset.id, true);
   if (action === 'send-ai') askAiAdvice(button.dataset.id);
@@ -2719,6 +3055,15 @@ document.addEventListener('keydown', event => {
 
 document.getElementById('back-link').addEventListener('click', () => navigate('planters'));
 document.getElementById('plant-form').addEventListener('submit', savePlantFromForm);
+
+['front', 'back'].forEach(side => {
+  document.getElementById(`seed-photo-${side}`).addEventListener('change', event => {
+    const file = event.target.files?.[0] || null;
+    seedPhotoFiles[side] = file;
+    document.getElementById(`seed-photo-${side}-name`).textContent = file ? file.name : 'Not selected';
+    if (file) setSeedLookupStatus('Photo selected. Add the other side or tap Analyze.');
+  });
+});
 
 document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
   btn.addEventListener('click', () => {

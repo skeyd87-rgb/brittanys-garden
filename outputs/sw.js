@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brittanys-garden-v11';
+const CACHE_NAME = 'brittanys-garden-v12';
 const APP_ASSETS = [
   './',
   './index.html',

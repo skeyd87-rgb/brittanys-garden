@@ -91,17 +91,27 @@ export function buildSeedPrompt({ barcode, catalog, imageCount }) {
 }
 
 export function finalizeSeedExtraction(value, catalog) {
-  const kind = String(value.kind || '')
+  const cleanedKind = String(value.kind || '')
     .replace(/\s*\((?:seed packet|seeds?)\)\s*/gi, ' ')
     .replace(/\bseed packet\b|\bseeds?\b/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 100);
   const variety = String(value.variety || '').trim().slice(0, 120);
+  const evidence = `${value.name || ''} ${cleanedKind} ${variety} ${catalog?.title || ''}`.toLowerCase();
+  const knownKinds = [
+    ['tomato', 'Tomato'], ['basil', 'Basil'], ['pepper', 'Pepper'], ['lettuce', 'Lettuce'],
+    ['kale', 'Kale'], ['spinach', 'Spinach'], ['arugula', 'Arugula'], ['cucumber', 'Cucumber'],
+    ['zucchini', 'Zucchini'], ['squash', 'Squash'], ['carrot', 'Carrot'], ['radish', 'Radish'],
+    ['beet', 'Beet'], ['cilantro', 'Cilantro'], ['parsley', 'Parsley'], ['dill', 'Dill'],
+    ['oregano', 'Oregano'], ['thyme', 'Thyme'], ['mint', 'Mint'], ['rosemary', 'Rosemary'],
+    ['marigold', 'Marigold'], ['zinnia', 'Zinnia']
+  ];
+  const kind = knownKinds.find(([term]) => evidence.includes(term))?.[1] || cleanedKind;
   let name = String(value.name || '').trim().slice(0, 120);
-  if (variety && !name.toLowerCase().includes(variety.toLowerCase())) {
-    name = `${variety} ${kind || name}`.trim().slice(0, 120);
-  }
+  if (variety && kind) name = `${variety} ${kind}`.trim().slice(0, 120);
+  else if (variety && !name.toLowerCase().includes(variety.toLowerCase())) name = `${variety} ${name}`.trim().slice(0, 120);
+  else if (!name && kind) name = kind;
   return {
     ...value,
     name,

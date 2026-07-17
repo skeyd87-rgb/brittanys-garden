@@ -67,6 +67,20 @@ test('normalizes identity and removes model-proposed cadences', () => {
   assert.equal(result.water, null);
 });
 
+test('canonicalizes catalog-backed plant types', () => {
+  const result = finalizeSeedExtraction({
+    name: 'Tomato',
+    kind: 'Fruit tomato',
+    variety: 'Best Boy Hybrid',
+    brand: 'Burpee',
+    water: null,
+    feed: null,
+    harvest: null
+  }, { title: 'Burpee Tomato Best Boy Hybrid Seed Packet' });
+  assert.equal(result.name, 'Best Boy Hybrid Tomato');
+  assert.equal(result.kind, 'Tomato');
+});
+
 test('validates a structured seed extraction', () => {
   const parsed = seedExtractionSchema.parse({
     isSeedPackage: true,

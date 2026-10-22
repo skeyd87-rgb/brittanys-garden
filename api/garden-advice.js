@@ -172,8 +172,11 @@ export default async function handler(req, res) {
     });
     return json(res, 200, result.output);
   } catch (error) {
-    console.error('Garden AI request failed', error);
+    console.error('Garden AI request failed', { name: error?.name || 'Error' });
     const details = `${error?.message || ''} ${error?.cause?.responseBody || ''}`;
+    if (/quota_for_entity_exceeded|budget.*exceed|spend.*limit/i.test(details)) {
+      return json(res, 429, { error: 'The AI spending limit has been reached. Your saved garden, plant guides, and manual care still work.' });
+    }
     if (/valid credit card|customer_verification_required/i.test(details)) {
       return json(res, 503, { error: 'AI setup needs a billing method in Vercel before first use.' });
     }

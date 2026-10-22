@@ -276,8 +276,11 @@ export default async function handler(req, res) {
         : 'The supplied result does not clearly identify a seed package.'
     });
   } catch (error) {
-    console.error('Seed packet extraction failed', error);
+    console.error('Seed packet extraction failed', { name: error?.name || 'Error' });
     const details = `${error?.message || ''} ${error?.cause?.responseBody || ''}`;
+    if (/quota_for_entity_exceeded|budget.*exceed|spend.*limit/i.test(details)) {
+      return json(res, 429, { error: 'The AI spending limit has been reached. Add the plant manually or use its built-in guide.' });
+    }
     if (/valid credit card|customer_verification_required/i.test(details)) {
       return json(res, 503, { error: 'AI setup needs a billing method in Vercel before packet analysis.' });
     }

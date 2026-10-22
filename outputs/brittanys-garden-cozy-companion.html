@@ -661,6 +661,30 @@ input, select, textarea { min-width: 0; max-width: 100%; }
     transition-duration: .01ms !important;
   }
 }
+.readiness-card { background: #fffdf7; border: 1px solid #d9dfce; border-radius: 20px; padding: 20px; margin: 16px 0; }
+.readiness-card h2 { font-size: 19px; margin-bottom: 8px; }
+.readiness-card p, .readiness-card li { font-size: 14px; line-height: 1.6; color: #555e4e; }
+.readiness-card ol { padding-left: 22px; margin: 12px 0; }
+.readiness-card a { color: #355d2c; }
+.readiness-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.readiness-actions .task-btn { width: auto; margin-top: 0; }
+.storage-warning { background: #fff0dc; border-color: #b57528; }
+.storage-warning p { color: #643f13; }
+.advanced-settings { margin-top: 16px; }
+.advanced-settings summary { cursor: pointer; font-size: 14px; padding: 12px 0; }
+.care-calendar { grid-column: 1 / -1; background: #fffdf7; border-radius: 20px; padding: 16px; }
+.care-calendar summary { cursor: pointer; font-weight: 800; padding: 8px; }
+.backup-label { display: block; font-weight: 800; margin: 14px 0 6px; }
+.backup-file { max-width: 100%; font: inherit; font-size: 13px; }
+.field-help, .readiness-card p { overflow-wrap: anywhere; }
+.log-buttons { flex-wrap: wrap; }
+.log-buttons .task-btn { min-width: 130px; }
+.task-btn:disabled { opacity: .65; cursor: default; }
+.phone-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; margin: 14px 0; }
+.phone-check input { width: 20px; height: 20px; flex-shrink: 0; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #355d2c; outline-offset: 3px; }
+.back-link { border: 0; background: transparent; font: inherit; text-align: left; }
+@media (max-width: 600px) { .readiness-card { padding: 16px; } .readiness-actions .task-btn { flex: 1 1 140px; } }
 </style>
 </head>
 <body>
@@ -693,7 +717,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
     </button>
     <div class="streak-card">
       <span class="streak-emoji">🌻</span>
-      <div class="streak-title">12-day streak!</div>
+      <div class="streak-title">Your garden journey</div>
       <div class="streak-sub">Your plants adore you.</div>
     </div>
   </nav>
@@ -701,9 +725,11 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   <!-- MAIN -->
   <main class="main">
     <div class="content-col">
+      <div id="storage-status" class="readiness-card storage-warning hidden" role="alert" aria-live="assertive"></div>
 
       <!-- TODAY -->
       <div class="screen active" id="scr-today">
+        <div id="first-run-guide"></div>
         <div class="hero-panel">
           <div>
             <div class="hero-greeting">Hi Brittany! ☀️</div>
@@ -719,7 +745,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
           </button>
         </div>
         <div class="today-header">
-          <div class="section-label">Friends to visit today</div>
+          <div class="section-label">Care to check today</div>
           <div class="today-count" id="today-count">3 to go</div>
         </div>
         <div class="task-grid" id="task-grid"></div>
@@ -747,16 +773,16 @@ input, select, textarea { min-width: 0; max-width: 100%; }
           <div class="field-grid">
             <div class="field">
               <label for="plant-name">Name</label>
-              <input id="plant-name" autocomplete="off" required placeholder="Cherry tomato">
+              <input id="plant-name" autocomplete="off" required maxlength="100" placeholder="Cherry tomato">
             </div>
             <div class="field">
               <label for="plant-kind">Plant type</label>
-              <input id="plant-kind" autocomplete="off" placeholder="Tomato, basil, pepper">
+              <input id="plant-kind" autocomplete="off" maxlength="100" placeholder="Tomato, basil, pepper">
             </div>
             <div class="field field-full">
               <label for="plant-seed-code">Seed package</label>
               <div class="scan-row">
-                <input id="plant-seed-code" autocomplete="off" placeholder="Scan or enter barcode / QR code">
+                <input id="plant-seed-code" autocomplete="off" maxlength="160" placeholder="Scan or enter barcode / QR code">
                 <button class="task-btn task-btn-outline" type="button" data-action="start-barcode-scan">Scan</button>
                 <button class="task-btn task-btn-outline" type="button" data-action="lookup-seed">Look up</button>
                 <button class="task-btn task-btn-outline" type="button" data-action="use-knowledge">Use guide</button>
@@ -786,7 +812,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             </div>
             <div class="field">
               <label for="plant-planter">Planter</label>
-              <input id="plant-planter" autocomplete="off" placeholder="Patio box">
+              <input id="plant-planter" autocomplete="off" maxlength="100" placeholder="Patio box">
             </div>
             <div class="field">
               <label for="plant-status">Care status</label>
@@ -825,7 +851,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             </div>
             <div class="field">
               <label for="plant-sun">Sun</label>
-              <input id="plant-sun" autocomplete="off" placeholder="Full sun">
+              <input id="plant-sun" autocomplete="off" maxlength="100" placeholder="Full sun">
             </div>
             <div class="field">
               <label for="plant-feed-count">Feed every</label>
@@ -885,11 +911,11 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             </div>
             <div class="field">
               <label for="plant-harvest-cue">Harvest cue</label>
-              <input id="plant-harvest-cue" autocomplete="off" placeholder="Pick when red">
+              <input id="plant-harvest-cue" autocomplete="off" maxlength="180" placeholder="Pick when red">
             </div>
             <div class="field field-full">
               <label for="plant-notes">Notes</label>
-              <textarea id="plant-notes" placeholder="What should Brittany remember?"></textarea>
+              <textarea id="plant-notes" maxlength="800" placeholder="What should Brittany remember?"></textarea>
             </div>
           </div>
           <div class="form-actions">
@@ -902,7 +928,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 
       <!-- DETAIL -->
       <div class="screen" id="scr-detail">
-        <div class="back-link" id="back-link">‹ Back to planters</div>
+        <button class="back-link" id="back-link" type="button">‹ Back to planters</button>
         <div class="detail-container" id="detail-container"></div>
       </div>
 
@@ -933,20 +959,13 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         <div style="font-size:15px;font-weight:600;color:#6b6555;margin-top:4px;margin-bottom:24px">Make it feel like yours.</div>
         <div class="setup-card">
           <div class="setup-card-title">🏡 About your garden</div>
-          <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off"></div>
-          <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off"></div>
-          <div class="setup-row">
-            <label class="setup-label" for="setting-ai-endpoint">AI helper</label>
-            <div class="location-picker">
-              <input class="setting-input" id="setting-ai-endpoint" inputmode="url" autocomplete="off" placeholder="Connected automatically">
-              <div class="field-help">The published app connects automatically. Leave this blank unless using a separate private helper URL.</div>
-            </div>
-          </div>
+          <div class="setup-row"><label class="setup-label" for="setting-gardener">Gardener</label><input class="setting-input" id="setting-gardener" autocomplete="off" maxlength="100"></div>
+          <div class="setup-row"><label class="setup-label" for="setting-garden">Garden name</label><input class="setting-input" id="setting-garden" autocomplete="off" maxlength="100"></div>
           <div class="setup-row">
             <label class="setup-label" for="setting-location-search">Location</label>
             <div class="location-picker">
               <div class="location-search-row">
-                <input class="setting-input" id="setting-location-search" autocomplete="off" placeholder="Search city or ZIP">
+                <input class="setting-input" id="setting-location-search" autocomplete="off" maxlength="160" placeholder="Search city or ZIP">
                 <button class="task-btn task-btn-outline" type="button" data-action="search-location" style="margin-top:0;width:auto;min-width:92px">Search</button>
               </div>
               <div class="location-selected" id="location-selected">No location selected.</div>
@@ -960,19 +979,55 @@ input, select, textarea { min-width: 0; max-width: 100%; }
               <button class="temp-opt" type="button" data-temp="C">°C</button>
             </div>
           </div>
+          <details class="advanced-settings">
+            <summary>Advanced connection settings</summary>
+            <label class="backup-label" for="setting-ai-endpoint">Private AI helper address</label>
+            <input class="setting-input" id="setting-ai-endpoint" inputmode="url" autocomplete="off" maxlength="500" placeholder="Connected automatically">
+            <div class="field-help">The published app is already connected. Leave this blank for normal use. Never enter an API key here.</div>
+          </details>
         </div>
         <div class="setup-card">
-          <div class="setup-card-title">🔔 Care preferences</div>
-          <div class="empty-sub" style="text-align:left;margin-bottom:10px">These control what shows inside the app. Phone notifications are not enabled yet.</div>
-          <div class="setup-row"><span class="setup-label">Thirsty reminders</span><button class="toggle on" type="button" data-notif="water" aria-label="Toggle thirsty reminders"><div class="toggle-knob"></div></button></div>
-          <div class="setup-row"><span class="setup-label">Harvest is ready</span><button class="toggle on" type="button" data-notif="harvest" aria-label="Toggle harvest reminders"><div class="toggle-knob"></div></button></div>
-          <div class="setup-row"><span class="setup-label">Weather watch</span><button class="toggle on" type="button" data-notif="weather" aria-label="Toggle weather watch"><div class="toggle-knob"></div></button></div>
+          <div class="setup-card-title">Daily phone reminder</div>
+          <p class="field-help">Optional: add one daily garden check to your phone calendar. Calendar delivers the alert even when this app is closed. It does not mean every plant needs watering.</p>
+          <div class="setup-row"><label class="setup-label" for="reminder-time">Reminder time</label><input class="setting-input" id="reminder-time" type="time" value="09:00"></div>
+          <div class="readiness-actions">
+            <button class="task-btn task-btn-primary" type="button" data-action="add-reminder">Add calendar reminder</button>
+            <button class="task-btn task-btn-outline" type="button" data-action="download-reminder">Download calendar file</button>
+            <button class="task-btn task-btn-outline" type="button" data-action="copy-reminder">Copy subscription link</button>
+          </div>
+          <p class="field-help" id="reminder-status" role="status">Finish adding it in Calendar and enable its alerts. To change or stop it later, edit or remove it in Calendar. Remove the previous reminder before adding another.</p>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">Keep your garden safe</div>
+          <p class="field-help">Your garden is saved in this browser on this device. A downloaded backup is your portable copy for another phone, browser, or garden address. Keep using the same app link.</p>
+          <p class="field-help" id="save-status" role="status"></p>
+          <div class="readiness-actions">
+            <button class="task-btn task-btn-primary" type="button" data-action="export-backup">Download garden backup</button>
+            <button class="task-btn task-btn-outline" type="button" data-action="restore-local">Restore last good copy</button>
+            <button class="task-btn task-btn-outline" type="button" data-action="retry-save">Retry save</button>
+          </div>
+          <label class="backup-label" for="backup-file">Restore a downloaded backup</label>
+          <input class="backup-file" id="backup-file" type="file" accept=".json,application/json">
+          <div id="backup-preview" class="hidden" aria-live="polite"></div>
+          <p class="field-help" id="backup-status" role="status"></p>
+          <div id="archived-plants"></div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-title">Brittany's phone check</div>
+          <p class="field-help">On your phone, try these once with your own plants. Tick only the checks you have actually completed.</p>
+          <label class="phone-check"><input type="checkbox" data-phone-check="installed">The home-screen app opens from the same garden link.</label>
+          <label class="phone-check"><input type="checkbox" data-phone-check="camera">A real seed packet scans, or front/back photos work; manual entry also works.</label>
+          <label class="phone-check"><input type="checkbox" data-phone-check="offline">After opening once online, airplane mode still lets me reopen and log care; reconnecting keeps it.</label>
+          <label class="phone-check"><input type="checkbox" data-phone-check="reminder">My optional Calendar reminder alerts at the time I chose, or I prefer no reminder.</label>
+          <label class="phone-check"><input type="checkbox" data-phone-check="backup">I downloaded a backup and checked its preview without replacing my garden.</label>
+          <div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="start-trial">Start seven-day trial</button></div>
+          <p class="field-help" id="trial-status" role="status"></p>
         </div>
         <div class="offline-panel">
           <div class="offline-icon">📿</div>
           <div>
             <div class="offline-title">Works offline</div>
-            <div class="offline-sub">Your garden lives on your device. No internet needed to log care, check schedules, or visit your plant friends. Weather and location search need internet. All data is yours. 🌱</div>
+            <div class="offline-sub" id="offline-status">Open once online to save an offline copy. Your garden lives on this device; use a downloaded backup to move it. Weather, seed lookup, and AI need internet.</div>
           </div>
         </div>
       </div>
@@ -987,7 +1042,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">2. Use Today for care</div>
-          <div class="empty-sub" style="text-align:left">Today starts with a Care Plan and an all-plant 7-day calendar, then shows plants that need water, trimming, feeding, or harvesting. Mark care when it is done.</div>
+          <div class="empty-sub" style="text-align:left">Today shows each due care check first. Check the soil or harvest cue before acting, then log what you did. Use Checked, not needed today to record a check without claiming you watered or harvested. Expand View the next seven days for the garden calendar.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">3. Use Care Board for the overview</div>
@@ -999,7 +1054,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">5. Add plant directions</div>
-          <div class="empty-sub" style="text-align:left">When adding or editing a plant, choose Water every, Feed every, and Check harvest every from the dropdowns. Add a Harvest cue such as "pick when red" so Brittany knows what to look for. Each completed action rolls the next date forward from the day it is logged.</div>
+          <div class="empty-sub" style="text-align:left">When adding or editing a plant, choose Water every, Feed every, and Check harvest every. Add a visible Harvest cue such as "pick when red". Watering, feeding, and harvesting each advance only their own date. Plant detail can undo the last logged care. A not-needed check leaves the due date in place so it returns tomorrow.</div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">6. Scan seed packages</div>
@@ -1011,13 +1066,13 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         </div>
         <div class="setup-card">
           <div class="setup-card-title">8. Add to phone home screen</div>
-          <div class="empty-sub" style="text-align:left">Open the app link on the phone, use the browser share menu, then choose Add to Home Screen.</div>
+          <div class="empty-sub" style="text-align:left">Open the published app link on the phone, use the browser share menu, then choose Add to Home Screen. Keep using that same link: another browser or address has a separate garden. Setup can export and restore a backup.</div>
         </div>
         <div class="offline-panel">
           <div class="offline-icon">🔔</div>
           <div>
-            <div class="offline-title">About nudges</div>
-            <div class="offline-sub">This version does not send push notifications. It tracks care inside the app. Real phone reminders would need notification permission plus a small backend or scheduled notification system.</div>
+            <div class="offline-title">A daily nudge, your way</div>
+            <div class="offline-sub">Setup can add a recurring reminder to your phone calendar. Finish adding it in Calendar and enable alerts there. The garden app itself does not send push notifications. Check soil and visible harvest cues before acting on a schedule.</div>
           </div>
         </div>
       </div>
@@ -1036,7 +1091,8 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 </div>
 
 <script src="vendor/zxing-browser.min.js"></script>
-<script>
+<script type="module">
+import { BACKUP_FORMAT, MAX_BACKUP_BYTES, parseGardenSnapshot, readGardenSnapshot, writeGardenSnapshot, gardenStreak, buildDailyReminder } from './garden-reliability.js';
 // ============================
 // DATA
 // ============================
@@ -1063,6 +1119,7 @@ const state = {
   scr: 'today',
   selId: null,
   streak: 0,
+  doneDate: '',
   doneToday: {},
   settings: {
     gardener: 'Brittany',
@@ -1073,9 +1130,11 @@ const state = {
     longitude: null,
     timezone: '',
     temp: 'F',
-    aiEndpoint: ''
+    aiEndpoint: '',
+    reminderTime: '09:00',
+    phoneChecks: {},
+    trialStartedAt: ''
   },
-  notif: { water: true, harvest: true, weather: true },
   weather: {
     status: 'empty',
     temp: null,
@@ -1085,6 +1144,7 @@ const state = {
     message: ''
   },
   plants: [],
+  archivedPlants: [],
   journal: []
 };
 
@@ -1095,34 +1155,195 @@ let barcodeScanTimer = null;
 let zxingControls = null;
 let pendingSeedLookup = null;
 const seedPhotoFiles = { front: null, back: null };
+let storageWriteBlocked = false;
+let storageMessage = '';
+let storageDirty = false;
+let lastSavedAt = '';
+let lastBackupAt = '';
+let pendingBackup = null;
+let journalLimit = 100;
+let weatherRequestId = 0;
 
 function hydrateState() {
+  // Loading never writes or removes a saved record. Recoverable errors must not
+  // be mistaken for an empty garden, especially when device storage is full.
+  let result;
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-    if (!saved) return;
-    if (saved.doneToday && typeof saved.doneToday === 'object') state.doneToday = saved.doneToday;
-    if (saved.settings && typeof saved.settings === 'object') state.settings = { ...state.settings, ...saved.settings };
-    if (saved.notif && typeof saved.notif === 'object') state.notif = { ...state.notif, ...saved.notif };
-    if (Array.isArray(saved.plants)) state.plants = saved.plants;
-    if (Array.isArray(saved.journal)) state.journal = saved.journal;
-    if (Number.isFinite(saved.streak)) state.streak = saved.streak;
-    state.plants.forEach(normalizePlantCare);
-    saveState();
-  } catch (error) {
-    localStorage.removeItem(storageKey);
+    result = readGardenSnapshot(localStorage, storageKey);
+  } catch {
+    result = { warning: 'Device storage is unavailable. Export a backup before closing the app.' };
   }
+  storageWriteBlocked = !!result.blocked;
+  storageDirty = false;
+  storageMessage = result.warning || '';
+  const saved = result.data;
+  if (saved) {
+    if (saved.settings && typeof saved.settings === 'object') state.settings = { ...state.settings, ...saved.settings };
+    if (Array.isArray(saved.plants)) state.plants = saved.plants;
+    if (Array.isArray(saved.archivedPlants)) state.archivedPlants = saved.archivedPlants;
+    if (Array.isArray(saved.journal)) state.journal = saved.journal;
+    state.doneDate = saved.doneDate || '';
+    state.doneToday = saved.doneToday || {};
+    lastSavedAt = saved.savedAt || '';
+    lastBackupAt = saved.lastBackupAt || '';
+    state.plants.forEach(normalizePlantCare);
+    for (const entry of state.journal) {
+      const matches = [...state.plants, ...state.archivedPlants].filter(p => p.name === entry.who);
+      if (!entry.plantId && matches.length === 1) entry.plantId = matches[0].id;
+    }
+    state.plants.forEach(p => {
+      if (p.aiAdviceStatus === 'loading') { p.aiAdviceStatus = 'error'; p.aiAdvice = 'That answer was interrupted. Ask again when you are connected.'; }
+    });
+  }
+  refreshDay();
 }
 
-function saveState() {
-  localStorage.setItem(storageKey, JSON.stringify({
+function gardenSnapshot() {
+  return {
+    schemaVersion: 4,
+    doneDate: state.doneDate,
     doneToday: state.doneToday,
     settings: state.settings,
-    notif: state.notif,
     plants: state.plants,
-    journal: state.journal.slice(0, 60),
-    streak: state.streak,
-    savedAt: new Date().toISOString()
-  }));
+    archivedPlants: state.archivedPlants,
+    journal: state.journal,
+    savedAt: new Date().toISOString(),
+    lastBackupAt
+  };
+}
+
+function saveState(options = {}) {
+  let result;
+  try { result = writeGardenSnapshot(localStorage, storageKey, gardenSnapshot(), { blocked: storageWriteBlocked, ...options }); }
+  catch { result = { ok: false, message: 'Device storage is unavailable. Keep this tab open and download a backup.' }; }
+  storageDirty = !result.ok;
+  storageMessage = result.message;
+  if (result.ok) {
+    storageWriteBlocked = false;
+    lastSavedAt = new Date().toISOString();
+  }
+  renderStorageStatus();
+  return result.ok;
+}
+
+function renderStorageStatus() {
+  const banner = document.getElementById('storage-status');
+  if (banner) {
+    banner.classList.toggle('hidden', !storageMessage);
+    banner.innerHTML = storageMessage ? `<h2>Your garden needs a save check</h2><p>${escapeHtml(storageMessage)}</p><div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="export-backup">Download backup</button><button class="task-btn task-btn-outline" type="button" data-screen="settings">Open recovery options</button></div>` : '';
+  }
+  const status = document.getElementById('save-status');
+  if (status) status.textContent = storageDirty || storageWriteBlocked ? 'Not safely saved yet. Use the recovery options below.' : lastSavedAt ? `Saved on this device: ${new Date(lastSavedAt).toLocaleString()}. ${lastBackupAt ? `Last downloaded backup: ${new Date(lastBackupAt).toLocaleString()}.` : 'No downloaded backup yet.'}` : 'Ready to save your first plant.';
+}
+
+function refreshDay() {
+  const today = dateKey(new Date());
+  const changed = state.doneDate !== today;
+  if (changed) {
+    state.doneDate = today;
+    state.doneToday = {};
+  }
+  // Rebuild from dated journal entries too, including migration from the old,
+  // undated completion flag. Never assume an old flag belongs to today.
+  for (const entry of state.journal) {
+    if (!entry.at || dateKey(new Date(entry.at)) !== today) continue;
+    const plantId = entry.plantId || (state.plants.filter(p => p.name === entry.who).length === 1 ? state.plants.find(p => p.name === entry.who)?.id : null);
+    if (!plantId || !['water', 'feed', 'trim', 'pick', 'check'].includes(entry.type)) continue;
+    if (!state.doneToday[plantId] || typeof state.doneToday[plantId] !== 'object') state.doneToday[plantId] = {};
+    state.doneToday[plantId][entry.type === 'check' && entry.careType ? `${entry.careType}-checked` : entry.type] = entry.at;
+  }
+  state.streak = gardenStreak(state.journal, new Date());
+  return changed;
+}
+
+function completedToday(plantId, type) {
+  return state.doneDate === dateKey(new Date()) && typeof state.doneToday[plantId] === 'object' && !!state.doneToday[plantId]?.[type];
+}
+
+function checkedToday(plantId, type) {
+  return completedToday(plantId, type) || completedToday(plantId, `${type}-checked`);
+}
+
+function downloadFile(filename, contents, type) {
+  const url = URL.createObjectURL(new Blob([contents], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+function exportBackup() {
+  try {
+    const data = gardenSnapshot();
+    parseGardenSnapshot(JSON.stringify(data));
+    downloadFile(`brittanys-garden-${dateKey(new Date())}.json`, JSON.stringify({ format: BACKUP_FORMAT, version: 1, exportedAt: new Date().toISOString(), data }, null, 2), 'application/json');
+    lastBackupAt = new Date().toISOString();
+    saveState();
+    document.getElementById('backup-status').textContent = 'Backup download started. Check Files or Downloads before closing the garden.';
+  } catch (error) { document.getElementById('backup-status').textContent = error.message || 'The backup could not be prepared. Keep this tab open.'; }
+}
+
+function previewBackup(raw, source = 'file') {
+  const saved = parseGardenSnapshot(raw, { importing: true });
+  pendingBackup = saved;
+  const preview = document.getElementById('backup-preview');
+  preview.classList.remove('hidden');
+  preview.innerHTML = `<div class="readiness-card"><h2>Review before restoring</h2><p>This ${source === 'local' ? 'last good copy' : 'file'} has ${saved.plants.length} plants, ${saved.archivedPlants.length} archived plants, and ${saved.journal.length} journal entries. Restoring replaces the garden shown here. Download your current garden first if you want to keep it.</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="confirm-restore">Replace garden with this backup</button><button class="task-btn task-btn-outline" type="button" data-action="cancel-restore">Cancel</button></div></div>`;
+  document.getElementById('backup-status').textContent = 'Preview only. Your garden has not changed.';
+}
+
+function restoreBackup() {
+  if (!pendingBackup) return;
+  // Commit the validated replacement before replacing the in-memory garden.
+  let result;
+  try { result = writeGardenSnapshot(localStorage, storageKey, { ...pendingBackup, savedAt: new Date().toISOString() }, { allowReplace: true }); }
+  catch { result = { ok: false, message: 'Storage is unavailable. The current garden has not been replaced.' }; }
+  if (!result.ok) { document.getElementById('backup-status').textContent = result.message; return; }
+  pendingBackup = null;
+  document.getElementById('backup-preview').classList.add('hidden');
+  hydrateState();
+  syncSettingsControls();
+  renderSetup();
+  renderToday();
+  document.getElementById('backup-status').textContent = 'Garden restored. Plants, care dates, and full journal are ready.';
+  fetchWeather();
+}
+
+function reminderUrl() {
+  const base = new URL(aiEndpoint() || 'https://brittanys-garden.vercel.app/api/garden-advice', location.href);
+  return new URL(`/api/daily-reminder?time=${encodeURIComponent(state.settings.reminderTime || '09:00')}`, base).href;
+}
+
+function addCalendarReminder(download = false) {
+  const time = document.getElementById('reminder-time').value || '09:00';
+  state.settings.reminderTime = time;
+  saveState();
+  if (download || !/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)) {
+    downloadFile('garden-daily-reminder.ics', buildDailyReminder({ time }), 'text/calendar');
+  } else {
+    const link = document.createElement('a');
+    link.href = reminderUrl().replace(/^https?:/, 'webcal:');
+    link.click();
+  }
+  document.getElementById('reminder-status').textContent = 'Finish adding the daily event in Calendar and enable its alerts. This app cannot confirm Calendar permission or delivery. Remove an older garden reminder before adding another.';
+}
+
+function renderSetup() {
+  renderStorageStatus();
+  const reminderTime = document.getElementById('reminder-time');
+  if (reminderTime) reminderTime.value = state.settings.reminderTime || '09:00';
+  document.querySelectorAll('[data-phone-check]').forEach(input => { input.checked = !!state.settings.phoneChecks?.[input.dataset.phoneCheck]; });
+  const archived = document.getElementById('archived-plants');
+  if (archived) archived.innerHTML = state.archivedPlants.length ? `<h3 class="backup-label">Archived plants</h3>${state.archivedPlants.map(p => `<div class="setup-row"><span>${escapeHtml(p.name)}</span><button class="task-btn task-btn-outline" style="width:auto;margin:0" type="button" data-action="restore-plant" data-id="${p.id}">Restore plant</button></div>`).join('')}` : '';
+  const trial = document.getElementById('trial-status');
+  if (trial) {
+    const start = state.settings.trialStartedAt;
+    const days = start ? Math.round((startOfLocalDay(new Date()) - startOfLocalDay(new Date(start))) / 86400000) + 1 : 0;
+    trial.textContent = !start ? 'Start with three real plants. Daily care should take about a minute; report anything confusing.' : days < 7 ? `Trial day ${Math.max(1, days)} of 7. Check that tomorrow’s tasks return and your saved changes remain after reopening.` : 'Seven calendar days have elapsed. Review your phone checks and any problems before calling the handoff complete.';
+  }
 }
 
 hydrateState();
@@ -1136,7 +1357,7 @@ function photoEl(id, className, size) {
     return `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover">`;
   }
   const p = state.plants.find(x => x.id === id);
-  return `<span style="font-size:${size||26}px">${p ? p.emoji : '🌿'}</span>`;
+  return `<span style="font-size:${size||26}px">${escapeHtml(p ? p.emoji : '🌿')}</span>`;
 }
 
 function statusPill(status) {
@@ -1144,9 +1365,9 @@ function statusPill(status) {
   return `<span class="status-pill ${meta.cls || 'pill-happy'}">${meta.pill || '✅ all good'}</span>`;
 }
 
-function rosterStatusPill(status) {
-  if (status === 'happy') return '';
-  const meta = statusMeta(status);
+function rosterStatusPill(plant) {
+  if (!isTaskPlant(plant)) return '';
+  const meta = taskMeta(plant);
   return `<span class="roster-status-pill ${meta.cls || 'pill-happy'}">${meta.pill || ''}</span>`;
 }
 
@@ -1323,7 +1544,7 @@ function applyGuideToForm(sourceText, quiet = false) {
   setCadenceValue('plant-feed', guide.feed);
   setCadenceValue('plant-harvest', guide.harvest);
   if (notesEl && !notesEl.value.includes(guide.note)) {
-    notesEl.value = [notesEl.value.trim(), guide.note].filter(Boolean).join('\n');
+    notesEl.value = [notesEl.value.trim(), guide.note].filter(Boolean).join('\n').slice(0, 800);
   }
 
   showToast('🌿', 'Guide applied', `${guide.kind} care defaults were added.`);
@@ -1499,20 +1720,34 @@ function scheduledDueItems(p) {
 }
 
 function taskMeta(p) {
-  if (['thirsty', 'trim', 'harvest'].includes(p.status)) return statusMeta(p.status);
-  const due = scheduledDueItems(p)[0];
-  if (!due) return statusMeta(p.status);
-  if (due.type === 'water') {
-    return { ...statusMeta('thirsty'), pill: '💧 due', note: 'Water due', msg: `${formatShortDate(due.dueAt)} was the planned water day.`, btnLabel: '💧 Mark watered', actionType: 'water' };
+  return careTasksForPlant(p)[0]?.meta || statusMeta('happy');
+}
+
+function careTasksForPlant(p) {
+  normalizePlantCare(p);
+  const tasks = new Map();
+  function add(type, dueAt, manual = false) {
+    if (tasks.has(type) || checkedToday(p.id, type)) return;
+    const sourceStatus = type === 'water' ? 'thirsty' : type === 'trim' ? 'trim' : type === 'pick' ? 'harvest' : 'happy';
+    const base = statusMeta(sourceStatus);
+    const meta = type === 'feed'
+      ? { ...base, pill: '🌿 feed due', note: 'Feed due', msg: 'Check the saved feeding plan before fertilizing.', btnLabel: '🌿 Mark fed', actionType: 'feed', doneEmoji: '🌿', doneTitle: 'Feeding logged!', doneSub: 'The next feeding date has moved forward.' }
+      : { ...base, actionType: type };
+    if (dueAt && !manual) {
+      meta.pill = type === 'water' ? '💧 soil check due' : type === 'feed' ? '🌿 feed due' : '🧺 harvest check due';
+      meta.note = type === 'water' ? 'Water check due' : type === 'feed' ? 'Feed due' : 'Harvest check due';
+      meta.msg = type === 'water' ? `Soil check due ${formatShortDate(dueAt)}. Water only if the top inch is dry.` : type === 'feed' ? `Feeding planned for ${formatShortDate(dueAt)}. Follow your fertilizer directions.` : `Harvest check due ${formatShortDate(dueAt)}. ${p.harvestCue || 'Pick only what is visibly ready.'}`;
+    }
+    tasks.set(type, { plant: p, type, dueAt: dueAt || dateKey(new Date()), meta });
   }
-  if (due.type === 'feed') {
-    return { ...statusMeta('happy'), pill: '🌿 feed due', note: 'Feed due', msg: `${formatShortDate(due.dueAt)} was the planned feeding day.`, btnLabel: '🌿 Mark fed', actionType: 'feed' };
-  }
-  return { ...statusMeta('harvest'), pill: '🧺 due', note: 'Harvest due', msg: `${formatShortDate(due.dueAt)} was the planned harvest day.`, btnLabel: '🧺 Mark harvested', actionType: 'pick' };
+  const manual = { thirsty: 'water', trim: 'trim', harvest: 'pick' }[p.status];
+  if (manual) add(manual, null, true);
+  for (const item of scheduledDueItems(p)) add(item.type === 'harvest' ? 'pick' : item.type, item.dueAt);
+  return [...tasks.values()];
 }
 
 function isTaskPlant(p) {
-  return ['thirsty', 'trim', 'harvest'].includes(p.status) || scheduledDueItems(p).length > 0;
+  return careTasksForPlant(p).length > 0;
 }
 
 function carePlanHtml(p, limit) {
@@ -1529,38 +1764,20 @@ function carePlanHtml(p, limit) {
 
 function todayPlanHtml() {
   if (!state.plants.length) return '';
-  const ordered = [
-    ...state.plants.filter(p => ['thirsty', 'harvest', 'trim'].includes(p.status)),
-    ...state.plants.filter(p => p.status === 'happy')
-  ].slice(0, 3);
+  const tasks = state.plants.flatMap(careTasksForPlant).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  if (!tasks.length) return '';
 
   return `<div class="care-plan-card">
     <div class="care-plan-title">Today&apos;s Care Plan</div>
     <div class="care-plan-sub">What Brittany should do next, based on the saved plan for each plant.</div>
     <div class="care-plan-list">
-      ${ordered.map(p => {
-        const due = scheduledDueItems(p)[0];
-        const urgent = due || (p.status === 'harvest' ? carePlanItems(p)[1] : p.status === 'trim' ? carePlanItems(p)[1] : carePlanItems(p)[0]);
-        const main = due?.type === 'water'
-          ? `Water due ${formatShortDate(due.dueAt)}`
-          : due?.type === 'feed'
-          ? `Feed due ${formatShortDate(due.dueAt)}`
-          : due?.type === 'harvest'
-          ? `Harvest due ${formatShortDate(due.dueAt)}`
-          : p.status === 'thirsty'
-          ? 'Water today'
-          : p.status === 'harvest'
-          ? 'Harvest today'
-          : p.status === 'trim'
-          ? 'Trim today'
-          : p.water
-          ? `Water again: ${p.water}`
-          : 'Set a water plan';
+      ${tasks.slice(0, 3).map(task => {
+        const p = task.plant;
         return `<div class="care-plan-row">
-          <div class="care-plan-emoji">${urgent.emoji}</div>
+          <div class="care-plan-emoji">${task.meta.doneEmoji}</div>
           <div>
-            <div class="care-plan-main">${escapeHtml(p.name)}: ${escapeHtml(main)}</div>
-            <div class="care-plan-note">${escapeHtml(urgent.note)}</div>
+            <div class="care-plan-main">${escapeHtml(p.name)}: ${escapeHtml(task.meta.note)}</div>
+            <div class="care-plan-note">${escapeHtml(task.meta.msg)}</div>
           </div>
         </div>`;
       }).join('')}
@@ -1866,9 +2083,6 @@ function syncSettingsControls() {
   document.getElementById('setting-ai-endpoint').value = state.settings.aiEndpoint || '';
   document.getElementById('setting-location-search').value = state.settings.locationQuery || state.settings.location || '';
   renderSelectedLocation();
-  document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
-    btn.classList.toggle('on', !!state.notif[btn.dataset.notif]);
-  });
   document.querySelectorAll('.temp-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.temp === state.settings.temp);
   });
@@ -2086,6 +2300,7 @@ async function lookupSeedPackage(value, images = []) {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
+      signal: AbortSignal.timeout(35000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ barcode, images })
     });
@@ -2186,7 +2401,7 @@ function applySeedLookupResult() {
   ].filter(Boolean);
   const notes = document.getElementById('plant-notes');
   const lines = [notes.value.trim(), ...additions].filter(Boolean);
-  notes.value = lines.filter((line, index) => lines.indexOf(line) === index).join('\n');
+  notes.value = lines.filter((line, index) => lines.indexOf(line) === index).join('\n').slice(0, 800);
   setSeedLookupStatus('Details applied. Review the form, then save the plant.', 'success');
   showToast('🌿', 'Details applied', 'Nothing is saved until you tap Save plant.');
 }
@@ -2211,7 +2426,7 @@ async function applyScannedSeedCode(value) {
   const notesEl = document.getElementById('plant-notes');
   if (seedEl) seedEl.value = clean;
   if (notesEl && !notesEl.value.includes(clean)) {
-    notesEl.value = [notesEl.value.trim(), `Seed package scan: ${clean}`].filter(Boolean).join('\n');
+    notesEl.value = [notesEl.value.trim(), `Seed package scan: ${clean}`].filter(Boolean).join('\n').slice(0, 800);
   }
   const barcode = normalizedLookupBarcode(clean);
   if (barcode) {
@@ -2430,6 +2645,7 @@ function renderWeather() {
 }
 
 async function fetchWeather() {
+  const requestId = ++weatherRequestId;
   if (!hasSelectedCoordinates()) {
     state.weather = { status: 'empty', temp: null, code: null, precipitation: null, updatedAt: '', message: '' };
     renderWeather();
@@ -2445,9 +2661,10 @@ async function fetchWeather() {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,precipitation&temperature_unit=${unit}&precipitation_unit=inch&timezone=auto&forecast_days=1`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error('Weather request failed');
     const data = await response.json();
+    if (requestId !== weatherRequestId) return;
     if (!data.current || !Number.isFinite(Number(data.current.temperature_2m))) throw new Error('Weather data missing');
 
     state.weather = {
@@ -2459,6 +2676,7 @@ async function fetchWeather() {
       message: ''
     };
   } catch (error) {
+    if (requestId !== weatherRequestId) return;
     state.weather = {
       status: 'error',
       temp: null,
@@ -2489,7 +2707,8 @@ function navigate(scr, selId) {
   const el = document.getElementById('scr-' + scr);
   if (el) el.classList.add('active');
 
-  const renders = { today: renderToday, board: renderBoard, planters: renderPlanters, detail: renderDetail, journal: renderJournal };
+  refreshDay();
+  const renders = { today: renderToday, board: renderBoard, planters: renderPlanters, detail: renderDetail, journal: renderJournal, settings: renderSetup };
   if (renders[scr]) renders[scr]();
 
   document.querySelector('.main').scrollTop = 0;
@@ -2499,9 +2718,14 @@ function navigate(scr, selId) {
 // RENDER TODAY
 // ============================
 function renderToday() {
+  refreshDay();
   state.plants.forEach(normalizePlantCare);
-  const tasks = state.plants.filter(isTaskPlant);
-  const remaining = tasks.filter(p => !state.doneToday[p.id]).length;
+  const tasks = state.plants.flatMap(careTasksForPlant).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const remaining = tasks.length;
+  const guide = document.getElementById('first-run-guide');
+  if (guide) guide.innerHTML = !state.plants.length || !hasSelectedCoordinates() ? `<section class="readiness-card"><h2>A small start for your garden</h2><ol><li>${hasSelectedCoordinates() ? 'Location selected.' : 'Choose your city in Setup for local weather.'}</li><li>${state.plants.length ? 'Your first plant is saved.' : 'Add a plant and use a plant guide for a starting care plan.'}</li><li>Check soil and harvest cues, then log what you actually did.</li></ol><div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-screen="settings">Set up my garden</button><button class="task-btn task-btn-primary" type="button" data-action="show-plant-form">Add a plant</button></div></section>` : '';
+  const streakTitle = document.querySelector('.streak-title');
+  if (streakTitle) streakTitle.textContent = state.streak ? `${state.streak}-day care streak` : 'Your garden journey';
   const weatherLine = state.weather.status === 'ready'
     ? `${state.settings.location || 'Your garden'} is ${weatherLabel(state.weather.code).toLowerCase()} right now.`
     : hasSelectedCoordinates()
@@ -2513,7 +2737,7 @@ function renderToday() {
     ? `Start by adding the first plant in ${state.settings.garden || 'your garden'}. ${weatherLine}`
     : remaining === 0
     ? `Everything logged for now. ${weatherLine}`
-    : `${weatherLine} ${remaining === 1 ? 'One friend' : remaining + ' friends'} would love a quick visit.`;
+    : `${weatherLine} ${remaining === 1 ? 'One care check needs' : remaining + ' care checks need'} a quick visit.`;
 
   renderWeather();
 
@@ -2524,7 +2748,7 @@ function renderToday() {
   badge.style.display = remaining === 0 ? 'none' : '';
 
   const grid = document.getElementById('task-grid');
-  let html = todayPlanHtml() + gardenCalendarHtml();
+  let html = '';
 
   if (state.plants.length === 0) {
     grid.innerHTML = `<div class="empty-state">
@@ -2536,17 +2760,9 @@ function renderToday() {
     return;
   }
 
-  tasks.forEach(p => {
-    const meta = taskMeta(p);
-    if (state.doneToday[p.id]) {
-      html += `<div class="task-card">
-        <div class="task-done">
-          <div class="task-done-emoji">${meta.doneEmoji}</div>
-          <div class="task-done-title">${meta.doneTitle}</div>
-          <div class="task-done-sub">${escapeHtml(meta.doneSub)}</div>
-        </div>
-      </div>`;
-    } else {
+  tasks.forEach(task => {
+      const p = task.plant;
+      const meta = task.meta;
       const hasPhoto = !!PHOTOS[p.id];
       html += `<div class="task-card">
         <div class="task-card-header">
@@ -2555,16 +2771,16 @@ function renderToday() {
           </button>
           <div>
             <div class="task-name">${escapeHtml(p.name)}</div>
-            ${statusPill(p.status)}
+            <span class="status-pill ${meta.cls || 'pill-happy'}">${escapeHtml(meta.pill)}</span>
           </div>
         </div>
         <div class="task-msg">${escapeHtml(meta.msg)}</div>
-        <button class="task-btn ${p.status === 'thirsty' ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="log-care" data-id="${p.id}" data-care="${meta.actionType}">${meta.btnLabel}</button>
+        <button class="task-btn ${task.type === 'water' ? 'task-btn-primary' : 'task-btn-outline'}" type="button" data-action="log-care" data-id="${p.id}" data-care="${task.type}">${meta.btnLabel}</button>
+        <button class="task-btn task-btn-outline" type="button" data-action="skip-care" data-id="${p.id}" data-care="${task.type}">Checked, not needed today</button>
       </div>`;
-    }
   });
 
-  const happy = state.plants.filter(p => p.status === 'happy' && !isTaskPlant(p));
+  const happy = state.plants.filter(p => !isTaskPlant(p));
   if (happy.length > 0) {
     const names = happy.map(p => p.name).join(' & ');
     html += `<div class="happy-card">
@@ -2574,6 +2790,7 @@ function renderToday() {
     </div>`;
   }
 
+  html += `<details class="care-calendar"><summary>View the next seven days</summary>${gardenCalendarHtml()}</details>`;
   grid.innerHTML = html;
 }
 
@@ -2581,12 +2798,13 @@ function renderToday() {
 // RENDER BOARD
 // ============================
 function renderBoard() {
-  const thirsty = state.plants.filter(p => p.status === 'thirsty');
-  const love    = state.plants.filter(p => ['trim','harvest'].includes(p.status));
-  const happy   = state.plants.filter(p => p.status === 'happy');
+  refreshDay();
+  const thirsty = state.plants.filter(p => careTasksForPlant(p).some(task => task.type === 'water'));
+  const love = state.plants.filter(p => !thirsty.includes(p) && isTaskPlant(p));
+  const happy = state.plants.filter(p => !isTaskPlant(p));
 
   function note(p) {
-    return statusMeta(p.status).note || 'All good';
+    return taskMeta(p).note || 'All good';
   }
   function chips(list) {
     if (!list.length) return '<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">Nothing here right now 🌱</div>';
@@ -2648,16 +2866,16 @@ function renderPlanters() {
     const hasPhoto = !!PHOTOS[p.id];
     return `<button class="roster-card" type="button" data-action="view-plant" data-id="${p.id}">
       <div class="roster-photo ${hasPhoto ? '' : 'placeholder'}">
-        ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover">` : `<span class="roster-photo-emoji">${p.emoji}</span>`}
-        ${rosterStatusPill(p.status)}
+        ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover">` : `<span class="roster-photo-emoji">${escapeHtml(p.emoji)}</span>`}
+        ${rosterStatusPill(p)}
       </div>
       <div class="roster-body">
         <div class="roster-name-row">
           <div class="roster-name">${escapeHtml(p.name)}</div>
-          <div class="roster-mood">${p.mood}</div>
+          <div class="roster-mood">${escapeHtml(p.mood)}</div>
         </div>
         <div class="roster-meta">${escapeHtml(p.kind || 'plant')} · ${escapeHtml(p.planter || state.settings.garden || 'garden')}</div>
-        <div class="roster-note">${escapeHtml(statusMeta(p.status).note || 'All good')}</div>
+        <div class="roster-note">${escapeHtml(taskMeta(p).note || 'All good')}</div>
       </div>
     </button>`;
   }).join('');
@@ -2667,6 +2885,7 @@ function renderPlanters() {
 // RENDER DETAIL
 // ============================
 function renderDetail() {
+  refreshDay();
   const p = state.plants.find(x => x.id === state.selId);
   if (!p) {
     navigate('planters');
@@ -2675,19 +2894,19 @@ function renderDetail() {
   normalizePlantCare(p);
 
   const hasPhoto = !!PHOTOS[p.id];
-  const plantJournal = state.journal.filter(e => e.who === p.name);
-  const trimOrPick = p.status === 'harvest' ? 'pick' : 'trim';
+  const plantJournal = state.journal.filter(e => e.plantId ? e.plantId === p.id : e.who === p.name).slice(0, 100);
+  const latestCare = plantJournal.find(e => e.undo);
 
   const storyHtml = plantJournal.length
     ? plantJournal.map(e => `<div class="story-row">
-        <div class="story-row-emoji">${e.emoji}</div>
+        <div class="story-row-emoji">${escapeHtml(e.emoji)}</div>
         <div><div class="story-bold">${escapeHtml(e.text)}</div><div class="story-sub">${escapeHtml(e.date)}</div></div>
       </div>`).join('')
     : `<div style="font-size:13px;font-weight:600;color:#a59a82;padding:8px 0">No entries yet. Log care to start ${escapeHtml(p.name)}'s story. 🌱</div>`;
 
   document.getElementById('detail-container').innerHTML = `
     <div class="detail-hero ${hasPhoto ? '' : 'placeholder'}">
-      ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}">` : `<div class="detail-hero-label">${p.emoji} ${escapeHtml(p.kind || 'plant')}</div>`}
+      ${hasPhoto ? `<img src="${PHOTOS[p.id]}" alt="${escapeHtml(p.name)}">` : `<div class="detail-hero-label">${escapeHtml(p.emoji)} ${escapeHtml(p.kind || 'plant')}</div>`}
     </div>
     <div class="detail-body">
       <div class="detail-identity">
@@ -2697,7 +2916,7 @@ function renderDetail() {
             <div class="detail-meta-text">${escapeHtml(p.kind || 'plant')} · ${escapeHtml(p.planter || state.settings.garden || 'garden')}</div>
           </div>
           <div class="mood-badge">
-            <span class="mood-badge-emoji">${p.mood}</span>
+            <span class="mood-badge-emoji">${escapeHtml(p.mood)}</span>
             <span class="mood-badge-text">${escapeHtml(p.moodText)}</span>
           </div>
         </div>
@@ -2716,13 +2935,12 @@ function renderDetail() {
       </div>
       ${plantCalendarHtml(p)}
       <div class="log-buttons">
-        <button class="task-btn task-btn-primary" type="button" data-action="log-care" data-id="${p.id}" data-care="water" style="flex:1">💧 Watered</button>
-        <button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="feed" style="flex:1">🌿 Fed</button>
-        <button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="${trimOrPick}" style="flex:1">${trimOrPick === 'pick' ? '🧺 Picked' : '✂️ Trimmed'}</button>
+        ${[['water', '💧 Watered'], ['feed', '🌿 Fed'], ['trim', '✂️ Trimmed'], ['pick', '🧺 Picked']].map(([type, label]) => `<button class="task-btn task-btn-outline" type="button" data-action="log-care" data-id="${p.id}" data-care="${type}" ${completedToday(p.id, type) ? 'disabled' : ''} style="flex:1">${label}${completedToday(p.id, type) ? ' today ✓' : ''}</button>`).join('')}
       </div>
+      ${latestCare && plantJournal.find(e => ['water', 'feed', 'trim', 'pick', 'check'].includes(e.type))?.id === latestCare.id ? `<button class="task-btn task-btn-outline" type="button" data-action="undo-care" data-id="${p.id}" data-entry-id="${escapeHtml(String(latestCare.id))}">Undo last logged care</button>` : ''}
       <div class="form-actions">
         <button class="task-btn task-btn-outline" type="button" data-action="edit-plant" data-id="${p.id}" style="margin-top:0">✏️ Edit plant</button>
-        <button class="task-btn task-btn-outline" type="button" data-action="delete-plant" data-id="${p.id}" style="margin-top:0">Remove</button>
+        <button class="task-btn task-btn-outline" type="button" data-action="delete-plant" data-id="${p.id}" style="margin-top:0">Archive plant</button>
       </div>
       <div class="story-section">
         <div class="section-label" style="margin-bottom:12px">${escapeHtml(p.name)}'s story 🎉</div>
@@ -2736,6 +2954,7 @@ function renderDetail() {
 // RENDER JOURNAL
 // ============================
 function renderJournal() {
+  refreshDay();
   document.getElementById('stat-moments').textContent = state.journal.length;
   document.getElementById('stat-harvests').textContent = state.journal.filter(e => e.type === 'pick').length;
   document.getElementById('stat-streak').textContent = state.streak;
@@ -2749,17 +2968,17 @@ function renderJournal() {
   }
   document.getElementById('journal-timeline').innerHTML = `
     <div class="timeline-rail"></div>
-    ${state.journal.map(e => `
+    ${state.journal.slice(0, journalLimit).map(e => `
       <div class="timeline-entry">
         <div class="timeline-dot" style="background:${e.dot}"></div>
         <div class="timeline-card">
-          <div class="timeline-emoji">${e.emoji}</div>
+          <div class="timeline-emoji">${escapeHtml(e.emoji)}</div>
           <div class="timeline-text">
             <div class="timeline-bold">${escapeHtml(e.text)}</div>
             <div class="timeline-sub">${escapeHtml(e.who)} · ${escapeHtml(e.date)}</div>
           </div>
         </div>
-      </div>`).join('')}`;
+      </div>`).join('')}${state.journal.length > journalLimit ? '<button class="task-btn task-btn-outline" type="button" data-action="more-journal">Show older entries</button>' : ''}`;
 }
 
 // ============================
@@ -2768,9 +2987,17 @@ function renderJournal() {
 function logCare(plantId, type) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
+  if (!['water', 'feed', 'trim', 'pick', 'check'].includes(type)) return;
+  refreshDay();
+  if (type !== 'check' && completedToday(plantId, type)) {
+    showToast('✓', 'Already logged today', 'The other care checks remain available.');
+    return;
+  }
   normalizePlantCare(p);
   const now = new Date();
   const nowIso = now.toISOString();
+  const careKey = { water: 'water', feed: 'feed', pick: 'harvest' }[type];
+  const undo = { status: p.status, mood: p.mood, moodText: p.moodText, updatedAt: p.updatedAt || '', careKey: careKey || '', careEntry: careKey ? JSON.parse(JSON.stringify(p.care[careKey])) : null };
 
   const verbs = {
     water: { text: `${p.name} got a refreshing drink`, emoji: '💧', title: 'All watered!',       sub: `${p.name} is one happy plant.` },
@@ -2781,8 +3008,9 @@ function logCare(plantId, type) {
   };
   const v = verbs[type] || verbs.check;
 
-  state.doneToday[plantId] = type;
-  if (type !== 'check') {
+  if (!state.doneToday[plantId] || typeof state.doneToday[plantId] !== 'object') state.doneToday[plantId] = {};
+  state.doneToday[plantId][type] = nowIso;
+  if ((type === 'water' && p.status === 'thirsty') || (type === 'trim' && p.status === 'trim') || (type === 'pick' && p.status === 'harvest')) {
     p.status = 'happy';
     p.mood = '😊';
     p.moodText = 'all set';
@@ -2795,16 +3023,16 @@ function logCare(plantId, type) {
     p.care.feed = careEntry(null, 'feed', p.care.feed.text, now);
     p.feed = p.care.feed.text;
   }
-  if ((type === 'pick' || type === 'trim') && p.care.harvest?.text) {
+  if (type === 'pick' && p.care.harvest?.text) {
     p.care.harvest = careEntry(null, 'harvest', p.care.harvest.text, now);
     p.harvestSchedule = p.care.harvest.text;
   }
   p.updatedAt = nowIso;
-  state.streak = Math.max(1, state.streak || 0);
-  state.journal.unshift({ id: Date.now(), emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), at: nowIso, dot: dotColor(type), type });
-  saveState();
+  state.journal.unshift({ id: `${Date.now()}-${type}-${p.id}`, plantId: p.id, emoji: v.emoji, text: v.text, who: p.name, date: todayLabel(), at: nowIso, dot: dotColor(type), type, undo });
+  state.streak = gardenStreak(state.journal, new Date());
+  const saved = saveState();
 
-  showToast(v.emoji, v.title, v.sub);
+  showToast(v.emoji, saved ? v.title : 'Care logged in this tab only', saved ? v.sub : 'Download a backup before closing. Device storage needs attention.');
 
   if (state.scr === 'today') renderToday();
   if (state.scr === 'detail') renderDetail();
@@ -2813,9 +3041,42 @@ function logCare(plantId, type) {
   if (state.scr === 'journal') renderJournal();
 }
 
+function skipCare(plantId, type) {
+  const p = state.plants.find(x => x.id === plantId);
+  if (!p || !['water', 'feed', 'trim', 'pick'].includes(type)) return;
+  refreshDay();
+  if (checkedToday(plantId, type)) return;
+  const at = new Date().toISOString();
+  if (!state.doneToday[plantId] || typeof state.doneToday[plantId] !== 'object') state.doneToday[plantId] = {};
+  state.doneToday[plantId][`${type}-checked`] = at;
+  state.journal.unshift({ id: `${Date.now()}-checked-${type}-${p.id}`, plantId, type: 'check', careType: type, text: `Checked ${p.name}: ${type === 'pick' ? 'harvest' : type} not needed today`, who: p.name, at, date: todayLabel(), emoji: '✓', dot: '#6a8d5b' });
+  saveState();
+  renderToday();
+  showToast('✓', 'Check logged', 'No watering, feeding, or harvest was recorded. The due check will return tomorrow.');
+}
+
+function undoCare(plantId, entryId) {
+  const plant = state.plants.find(p => p.id === plantId);
+  const latest = state.journal.find(e => e.plantId === plantId && ['water', 'feed', 'trim', 'pick', 'check'].includes(e.type));
+  if (!plant || !latest?.undo || String(latest.id) !== entryId) return;
+  const previous = latest.undo;
+  if (previous.careKey) plant.care[previous.careKey] = previous.careEntry;
+  plant.status = previous.status;
+  plant.mood = previous.mood;
+  plant.moodText = previous.moodText;
+  plant.updatedAt = previous.updatedAt;
+  state.journal = state.journal.filter(e => e !== latest);
+  if (state.doneToday[plantId] && typeof state.doneToday[plantId] === 'object') delete state.doneToday[plantId][latest.type];
+  refreshDay();
+  saveState();
+  renderDetail();
+  showToast('↶', 'Last care undone', 'Its original care date has been restored.');
+}
+
 async function askAiAdvice(plantId, starter = false) {
   const p = state.plants.find(x => x.id === plantId);
   if (!p) return;
+  if (p.aiAdviceStatus === 'loading') return;
   const endpoint = aiEndpoint();
   if (!endpoint) {
     p.aiAdvice = 'AI needs a private helper URL in Setup before it can answer. The app will not expose an API key in the browser.';
@@ -2845,6 +3106,7 @@ async function askAiAdvice(plantId, starter = false) {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
+      signal: AbortSignal.timeout(30000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         today: dateKey(new Date()),
@@ -2889,7 +3151,7 @@ async function askAiAdvice(plantId, starter = false) {
     renderDetail();
     showToast('✨', 'Answer ready', 'Ask another question to continue.');
   } catch (error) {
-    p.aiAdvice = error.message || 'AI helper did not respond. Try again shortly.';
+    p.aiAdvice = /billing|credit card|customer_verification/i.test(error.message || '') ? 'AI help needs a setup check. Your garden and the built-in plant guides still work.' : /timeout|aborted/i.test(error.message || '') ? 'The answer took too long. Try again when your connection is stable; your care plan has not changed.' : error.message || 'AI helper did not respond. Try again shortly.';
     p.aiAdviceStatus = 'error';
     saveState();
     renderDetail();
@@ -2974,7 +3236,8 @@ function savePlantFromForm(event) {
   if (!existing) {
     state.plants.push(plant);
     state.journal.unshift({
-      id: Date.now(),
+      id: `${Date.now()}-add-${plant.id}`,
+      plantId: plant.id,
       emoji: plant.emoji,
       text: `Added ${plant.name}`,
       who: plant.name,
@@ -2985,25 +3248,24 @@ function savePlantFromForm(event) {
     });
   }
 
-  delete state.doneToday[plant.id];
-  saveState();
+  const saved = saveState();
   closePlantForm();
   renderPlanters();
   document.querySelector('.main').scrollTop = 0;
-  showToast('🌱', existing ? 'Plant updated' : 'Plant added', `${plant.name} is ready to track.`);
+  showToast('🌱', saved ? (existing ? 'Plant updated' : 'Plant added') : 'Plant kept in this tab only', saved ? `${plant.name} is ready to track.` : 'Download a backup before closing. Device storage needs attention.');
 }
 
 function deletePlant(id) {
   const plant = state.plants.find(p => p.id === id);
   if (!plant) return;
-  if (!confirm(`Remove ${plant.name}?`)) return;
+  if (!confirm(`Archive ${plant.name}? Its history stays in the journal. You can restore it in Setup.`)) return;
+  state.archivedPlants.push({ ...plant, archivedAt: new Date().toISOString() });
   state.plants = state.plants.filter(p => p.id !== id);
-  state.journal = state.journal.filter(entry => entry.who !== plant.name);
   delete state.doneToday[id];
   saveState();
   navigate('planters');
   renderPlanters();
-  showToast('🧹', 'Plant removed', `${plant.name} was removed.`);
+  showToast('🌱', 'Plant archived', `${plant.name} can be restored in Setup. Its journal is preserved.`);
 }
 
 // ============================
@@ -3021,12 +3283,61 @@ document.addEventListener('click', event => {
   const action = button.dataset.action;
   if (!action) return;
 
+  if (action === 'export-backup') return exportBackup();
+  if (action === 'confirm-restore') return restoreBackup();
+  if (action === 'cancel-restore') {
+    pendingBackup = null;
+    document.getElementById('backup-preview').classList.add('hidden');
+    document.getElementById('backup-status').textContent = 'Restore cancelled. Your garden has not changed.';
+    return;
+  }
+  if (action === 'restore-local') {
+    try {
+      const raw = localStorage.getItem(`${storageKey}:backup`);
+      if (!raw) throw new Error('No previous saved copy yet. Choose a downloaded backup instead.');
+      previewBackup(raw, 'local');
+    } catch (error) { document.getElementById('backup-status').textContent = error.message; }
+    return;
+  }
+  if (action === 'retry-save') {
+    const saved = saveState();
+    showToast(saved ? '✓' : '!', saved ? 'Garden saved' : 'Saving still needs attention', saved ? 'Your changes are safe on this device.' : storageMessage);
+    return;
+  }
+  if (action === 'add-reminder' || action === 'download-reminder') return addCalendarReminder(action === 'download-reminder');
+  if (action === 'copy-reminder') {
+    const url = reminderUrl();
+    navigator.clipboard?.writeText(url).then(() => { document.getElementById('reminder-status').textContent = 'Link copied. In Calendar, add a subscription calendar, paste the link, and enable alerts.'; }).catch(() => { document.getElementById('reminder-status').textContent = `Add this subscription in Calendar: ${url}`; });
+    if (!navigator.clipboard) document.getElementById('reminder-status').textContent = `Add this subscription in Calendar: ${url}`;
+    return;
+  }
+  if (action === 'restore-plant') {
+    const plant = state.archivedPlants.find(p => p.id === button.dataset.id);
+    if (!plant) return;
+    const restored = { ...plant };
+    delete restored.archivedAt;
+    state.plants.push(restored);
+    state.archivedPlants = state.archivedPlants.filter(p => p.id !== plant.id);
+    saveState();
+    renderSetup();
+    showToast('🌱', 'Plant restored', `${plant.name} is back with its care plan and history.`);
+    return;
+  }
+  if (action === 'more-journal') { journalLimit += 100; return renderJournal(); }
+  if (action === 'start-trial') {
+    if (!state.settings.trialStartedAt) state.settings.trialStartedAt = new Date().toISOString();
+    saveState();
+    return renderSetup();
+  }
+
   if (action === 'show-plant-form') openPlantForm();
   if (action === 'cancel-plant-form') closePlantForm();
   if (action === 'view-plant') navigate('detail', button.dataset.id);
   if (action === 'edit-plant') openPlantForm(button.dataset.id);
   if (action === 'delete-plant') deletePlant(button.dataset.id);
   if (action === 'log-care') logCare(button.dataset.id, button.dataset.care);
+  if (action === 'skip-care') skipCare(button.dataset.id, button.dataset.care);
+  if (action === 'undo-care') undoCare(button.dataset.id, button.dataset.entryId);
   if (action === 'start-barcode-scan') startBarcodeScan();
   if (action === 'stop-barcode-scan') stopBarcodeScan();
   if (action === 'lookup-seed') lookupSeedPackage(document.getElementById('plant-seed-code').value);
@@ -3065,11 +3376,29 @@ document.getElementById('plant-form').addEventListener('submit', savePlantFromFo
   });
 });
 
-document.querySelectorAll('.toggle[data-notif]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const key = btn.dataset.notif;
-    state.notif[key] = !state.notif[key];
-    btn.classList.toggle('on', state.notif[key]);
+document.getElementById('backup-file').addEventListener('change', async event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a garden backup smaller than 4 MB.');
+    previewBackup(await file.text());
+  } catch (error) {
+    pendingBackup = null;
+    document.getElementById('backup-preview').classList.add('hidden');
+    document.getElementById('backup-status').textContent = error instanceof SyntaxError ? 'That file is not a readable garden backup. Choose the JSON file downloaded from Setup. Your garden has not changed.' : error.message || 'That backup could not be read. Your garden has not changed.';
+  }
+  event.target.value = '';
+});
+
+document.getElementById('reminder-time').addEventListener('change', event => {
+  state.settings.reminderTime = event.target.value || '09:00';
+  saveState();
+  document.getElementById('reminder-status').textContent = 'Time saved here. To change an existing phone reminder, edit it in Calendar or remove it before adding the new one.';
+});
+
+document.querySelectorAll('[data-phone-check]').forEach(input => {
+  input.addEventListener('change', () => {
+    state.settings.phoneChecks = { ...state.settings.phoneChecks, [input.dataset.phoneCheck]: input.checked };
     saveState();
   });
 });
@@ -3115,13 +3444,45 @@ document.getElementById('setting-location-search').addEventListener('keydown', e
 // INIT
 // ============================
 syncSettingsControls();
+renderStorageStatus();
 navigate('today');
 fetchWeather();
+
+function refreshAfterResume() {
+  const changed = refreshDay();
+  if (changed) {
+    const render = { today: renderToday, board: renderBoard, detail: renderDetail, planters: renderPlanters, journal: renderJournal, settings: renderSetup }[state.scr];
+    render?.();
+  }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAfterResume(); });
+window.addEventListener('pageshow', refreshAfterResume);
+window.addEventListener('focus', refreshAfterResume);
+setInterval(refreshAfterResume, 60000);
+window.addEventListener('storage', event => {
+  if (event.key !== storageKey) return;
+  if (storageDirty || !document.getElementById('plant-form').classList.contains('hidden')) {
+    storageWriteBlocked = true;
+    storageMessage = 'Your garden changed in another tab. Export any unsaved edits here, then reopen the app to load the latest saved copy.';
+    renderStorageStatus();
+    return;
+  }
+  hydrateState();
+  syncSettingsControls();
+  renderStorageStatus();
+  const render = { today: renderToday, board: renderBoard, detail: renderDetail, planters: renderPlanters, journal: renderJournal, settings: renderSetup }[state.scr];
+  render?.();
+});
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').then(registration => {
     registration.update();
-  }).catch(() => {});
+    return navigator.serviceWorker.ready;
+  }).then(() => {
+    document.getElementById('offline-status').textContent = 'Offline copy ready. After opening once online, you can reopen and log care without internet. Weather, seed lookup, and AI still need a connection. Try airplane mode in the phone check above.';
+  }).catch(() => {
+    document.getElementById('offline-status').textContent = 'The offline copy could not be prepared. Reconnect and reopen the published app before relying on it offline. Your saved garden is still on this device.';
+  });
 }
 </script>
 </body>

@@ -8,7 +8,8 @@ const port = Number(process.env.GARDEN_PORT || 7432);
 const api = {
   '/api/daily-reminder': '../api/daily-reminder.js',
   '/api/garden-advice': '../api/garden-advice.js',
-  '/api/seed-lookup': '../api/seed-lookup.js'
+  '/api/seed-lookup': '../api/seed-lookup.js',
+  '/api/move-garden': '../api/move-garden.js'
 };
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 const server = http.createServer(async (req, res) => {
@@ -25,7 +26,10 @@ const server = http.createServer(async (req, res) => {
         parts.push(chunk);
       }
       if (parts.length) {
-        try { req.body = JSON.parse(Buffer.concat(parts).toString('utf8')); }
+        try {
+          const raw = Buffer.concat(parts).toString('utf8');
+          req.body = (req.headers['content-type'] || '').startsWith('application/x-www-form-urlencoded') ? Object.fromEntries(new URLSearchParams(raw)) : JSON.parse(raw);
+        }
         catch { return res.status(400).end('Invalid JSON'); }
       }
       const { default: handler } = await import(api[url.pathname]);

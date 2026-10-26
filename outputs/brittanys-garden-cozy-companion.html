@@ -1023,7 +1023,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
           <div id="backup-preview" class="hidden" aria-live="polite"></div>
           <p class="field-help" id="backup-status" role="status"></p>
           <div id="archived-plants"></div>
-          <div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="preview-cloud-recovery">Review the other saved copy</button></div>
+          <div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="preview-cloud-recovery">Review the other saved copy</button><button class="task-btn task-btn-outline" type="button" data-action="preview-moved-garden">Review old app’s copy</button><button class="task-btn task-btn-outline" type="button" data-action="preview-before-move">Review garden kept before move</button></div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">Brittany's phone check</div>
@@ -1109,7 +1109,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script type="module">
 import { BACKUP_FORMAT, MAX_BACKUP_BYTES, parseGardenSnapshot, readGardenSnapshot, writeGardenSnapshot, gardenStreak, buildDailyReminder } from './garden-reliability.js';
-import { initializeGardenCloud } from './garden-cloud.js';
+import { initializeGardenCloud } from './garden-cloud.js?v=16';
 // ============================
 // DATA
 // ============================
@@ -1178,6 +1178,7 @@ let storageDirty = false;
 let lastSavedAt = '';
 let lastBackupAt = '';
 let pendingBackup = null;
+let pendingBackupSource = '';
 let journalLimit = 100;
 let weatherRequestId = 0;
 let cloud = null;
@@ -1277,6 +1278,7 @@ function renderCloudStatus() {
     loading: ['Connecting to your garden', 'Checking the private cloud copy. No empty garden will replace an existing one.'],
     'signed-out': ['Your private garden', 'Sign in with Steven’s or Brittany’s approved Google account. Existing data on this device is kept for safe migration.'],
     'signing-in': ['Opening Google sign-in', 'Choose your approved account, then return to this garden.'],
+    moving: ['Moving to the current Garden address', 'Keeping your old garden copy before opening sign-in. The original stays in the old app.'],
     denied: ['Choose an approved account', 'Only Steven and Brittany can open this garden.'],
     ready: ['Cloud saving is ready', 'Add your first plant. Changes will save automatically.'],
     saving: ['Saving to cloud…', 'Keep the app open until this says Saved to cloud.'],
@@ -1299,6 +1301,7 @@ function renderCloudStatus() {
     const local = cloud?.engine?.record?.snapshot;
     choices.innerHTML = `<p>This device: ${local?.plants.length || 0} plants, ${local?.journal.length || 0} journal entries. Cloud: ${conflict.snapshot?.plants.length || 0} plants, ${conflict.snapshot?.journal.length || 0} journal entries. The other copy will remain available in Setup.</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="use-cloud-garden">Use cloud garden</button><button class="task-btn task-btn-outline" type="button" data-action="use-device-garden">Save this device’s garden instead</button><button class="task-btn task-btn-outline" type="button" data-action="export-backup">Download this device’s copy</button></div>`;
   } else choices.innerHTML = '';
+  if (signedIn && cloudView.migration) choices.innerHTML += `<p>The old app’s garden is kept separately. Review it before replacing the garden shown here.</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="preview-moved-garden">Review old app’s garden</button><button class="task-btn task-btn-outline" type="button" data-action="keep-current-garden">Keep current garden</button></div>`;
   renderStorageStatus();
 }
 
@@ -1379,14 +1382,24 @@ function exportBackup() {
 function previewBackup(raw, source = 'file') {
   const saved = parseGardenSnapshot(raw, { importing: true });
   pendingBackup = saved;
+  pendingBackupSource = source;
   const preview = document.getElementById('backup-preview');
   preview.classList.remove('hidden');
-  preview.innerHTML = `<div class="readiness-card"><h2>Review before restoring</h2><p>This ${source === 'local' ? 'last good copy' : 'file'} has ${saved.plants.length} plants, ${saved.archivedPlants.length} archived plants, and ${saved.journal.length} journal entries. Restoring replaces the garden shown here. Download your current garden first if you want to keep it.</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="confirm-restore">Replace garden with this backup</button><button class="task-btn task-btn-outline" type="button" data-action="cancel-restore">Cancel</button></div></div>`;
+  const names = saved.plants.slice(0, 8).map(plant => plant.name).join(', ');
+  preview.innerHTML = `<div class="readiness-card"><h2>Review before restoring</h2><p>This ${source === 'local' ? 'last good copy' : source === 'old-app' ? 'old app copy' : source === 'before-move' ? 'garden kept before the move' : 'saved copy'} has ${saved.plants.length} plants, ${saved.archivedPlants.length} archived plants, and ${saved.journal.length} journal entries. Restoring replaces the garden shown here. ${source === 'old-app' ? 'The garden shown here will be kept separately before replacement.' : 'Download your current garden first if you want to keep it.'}</p>${names ? `<p>Plants: ${escapeHtml(names)}${saved.plants.length > 8 ? ', and more' : ''}.</p>` : ''}<div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="confirm-restore">Replace garden with this backup</button><button class="task-btn task-btn-outline" type="button" data-action="cancel-restore">Cancel</button></div></div>`;
   document.getElementById('backup-status').textContent = 'Preview only. Your garden has not changed.';
 }
 
 async function restoreBackup() {
   if (!pendingBackup) return;
+  if (pendingBackupSource === 'old-app') {
+    if (!await cloud?.restoreMovedCopy()) return;
+    pendingBackup = null; pendingBackupSource = '';
+    document.getElementById('backup-preview').classList.add('hidden');
+    document.getElementById('backup-status').textContent = 'Old app copy loaded. The previous garden is kept in Setup. Check the cloud save status above.';
+    renderSetup(); renderToday();
+    return;
+  }
   // Commit the validated replacement before replacing the in-memory garden.
   let result;
   try { result = writeGardenSnapshot(localStorage, storageKey, { ...pendingBackup, savedAt: new Date().toISOString() }, { allowReplace: true }); }
@@ -3401,6 +3414,14 @@ document.addEventListener('click', event => {
     const copy = cloud?.recovery();
     if (copy) previewBackup(JSON.stringify(copy), 'cloud');
     else document.getElementById('backup-status').textContent = 'There is no other saved copy to review yet. Nothing has changed.';
+    return;
+  }
+  if (action === 'keep-current-garden') return cloud?.keepMovedCopy();
+  if (action === 'preview-moved-garden' || action === 'preview-before-move') {
+    const copy = action === 'preview-moved-garden' ? cloud?.movedCopy() : cloud?.beforeMoveCopy();
+    navigate('settings');
+    if (copy) previewBackup(JSON.stringify(copy), action === 'preview-moved-garden' ? 'old-app' : 'before-move');
+    else document.getElementById('backup-status').textContent = 'There is no moved copy to review on this device. Nothing has changed.';
     return;
   }
   if (action === 'confirm-restore') return restoreBackup();

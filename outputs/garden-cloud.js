@@ -1,4 +1,5 @@
-import { GardenSync, createDeviceStore, CLOUD_DOCUMENT, ALLOWED_GARDEN_EMAILS } from './garden-sync.js';
+import { GardenSync, createDeviceStore, CLOUD_DOCUMENT, ALLOWED_GARDEN_EMAILS } from './garden-sync.js?v=16';
+import { moveDestination, makeMovePacket, postGardenMove, moveStores, latestGardenMove, seedMovedGarden, saveMoveReceipt } from './garden-move.js?v=16';
 
 // Public Firebase web configuration. Access is enforced by firestore.rules,
 // not by hiding this browser configuration. No service-account key is used.
@@ -12,8 +13,12 @@ export const FIREBASE_CONFIG = {
 
 export function initializeGardenCloud({ getSnapshot, applySnapshot, localInfo, onStatus, onAuth, isEditing }) {
   let engine, auth, db, ref, unsubscribe, user = null, booting;
+  let moved = null, restoringMove = false;
+  const destination = moveDestination(location.href);
+  const deviceStore = createDeviceStore();
+  const transfers = moveStores();
   const online = () => navigator.onLine !== false;
-  const publish = value => onStatus({ ...value, conflict: user ? value.conflict : null, signedIn: !!user, email: user?.email || '' });
+  const publish = value => onStatus({ ...value, conflict: user ? value.conflict : null, migration: !!user && moved?.status === 'pending', signedIn: !!user, email: user?.email || '' });
   const authError = error => publish({ phase: 'error', message: `Google sign-in could not finish (${error?.code || 'connection-error'}). Try again in the same garden app. Existing garden copies are unchanged.` });
 
   const controller = {
@@ -27,9 +32,43 @@ export function initializeGardenCloud({ getSnapshot, applySnapshot, localInfo, o
     },
     resolve(choice) { if (user) return engine?.resolve(choice); },
     recovery() { return user ? engine?.record?.recovery : null; },
+    movedCopy() { return user ? moved?.packet.snapshot : null; },
+    beforeMoveCopy() { return user ? moved?.beforeReplacement : null; },
+    async keepMovedCopy() {
+      if (!user || !moved) return;
+      try {
+        await saveMoveReceipt({ ...moved, status: 'kept' }, transfers);
+        moved.status = 'kept'; engine.resume();
+      } catch (error) { engine.status('error', error.message); }
+    },
+    async restoreMovedCopy() {
+      if (!user || !moved || restoringMove) return false;
+      restoringMove = true;
+      try {
+        // Keep the destination's current garden independently before an
+        // explicitly reviewed replacement, including any unsynced changes.
+        const saved = { ...moved, beforeReplacement: JSON.parse(JSON.stringify(engine.record.snapshot)) };
+        await saveMoveReceipt(saved, transfers);
+        moved = saved;
+        if (!await engine.submit(moved.packet.snapshot, { recovered: true })) throw new Error('The replacement could not be kept on this device. Keep the app open and check Retry sync. Both original garden copies remain protected.');
+        applySnapshot(JSON.parse(JSON.stringify(moved.packet.snapshot)));
+        await saveMoveReceipt({ ...moved, status: 'restored' }, transfers);
+        moved.status = 'restored'; engine.resume();
+        return true;
+      } catch (error) { engine.status('error', error.message); return false; }
+      finally { restoringMove = false; }
+    },
     async signIn() {
-      if (!auth) return authError({ code: 'setup-not-ready' });
       if (!online()) return publish({ phase: 'error', message: 'Connect to the internet to sign in. Your existing device copy is unchanged.' });
+      if (destination) {
+        publish({ phase: 'moving' });
+        try {
+          const previous = await deviceStore.read();
+          postGardenMove(makeMovePacket(getSnapshot(), localInfo, previous, location.href), destination);
+        } catch (error) { publish({ phase: 'error', message: error.message || 'The old garden could not be moved. Its original is unchanged.' }); }
+        return;
+      }
+      if (!auth) return authError({ code: 'setup-not-ready' });
       const provider = new globalThis.firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       publish({ phase: 'signing-in' });
@@ -64,6 +103,14 @@ export function initializeGardenCloud({ getSnapshot, applySnapshot, localInfo, o
   }
 
   booting = (async () => {
+    // GitHub Pages cannot proxy Firebase's auth helper. Authorizing that
+    // domain alone still loses the redirect session on iPhone. Move the
+    // device copy first, then start auth on the first-party helper's host.
+    if (destination) {
+      onAuth(false);
+      publish({ phase: 'signed-out', message: 'Continue to the current Garden address, then sign in there. Your saved garden will travel with you, and the old copy will stay intact.' });
+      return;
+    }
     const sdk = globalThis.firebase;
     if (!sdk?.auth || !sdk?.firestore) throw new Error('The sign-in files could not load. Reconnect and reload this app.');
     const app = sdk.apps.find(item => item.name === 'garden') || sdk.initializeApp(FIREBASE_CONFIG, 'garden');
@@ -77,7 +124,7 @@ export function initializeGardenCloud({ getSnapshot, applySnapshot, localInfo, o
     }
     ref = db.doc(CLOUD_DOCUMENT);
     engine = new GardenSync({
-      store: createDeviceStore(), online, onSnapshot: applySnapshot, onStatus: publish, isEditing,
+      store: deviceStore, online, onSnapshot: applySnapshot, onStatus: publish, isEditing,
       remote: {
         commit(version, payload) {
           return db.runTransaction(async transaction => {
@@ -95,6 +142,11 @@ export function initializeGardenCloud({ getSnapshot, applySnapshot, localInfo, o
         }
       }
     });
+    moved = await latestGardenMove(transfers);
+    // A full destination can still sign in and load its existing cloud copy.
+    // The incoming copy remains separate for a reviewed retry.
+    try { await seedMovedGarden(moved, { store: deviceStore, snapshot: getSnapshot(), localInfo, stores: transfers }); }
+    catch { /* Never discard or auto-replace either garden after a failed seed. */ }
     await engine.init(getSnapshot(), localInfo);
     try { await auth.setPersistence(sdk.auth.Auth.Persistence.LOCAL); }
     catch { publish({ phase: 'error', message: 'This browser cannot remember sign-in. You can sign in now; allow site storage to stay signed in after reopening.' }); }

@@ -1,7 +1,8 @@
-const CACHE_NAME = 'brittanys-garden-v15';
+const CACHE_NAME = 'brittanys-garden-v16';
 const CORE_ASSETS = [
   './', './index.html', './brittanys-garden-cozy-companion.html',
-  './garden-reliability.js', './garden-sync.js', './garden-cloud.js',
+  './garden-reliability.js', './garden-sync.js?v=16', './garden-cloud.js?v=16',
+  './garden-move.js?v=16', './garden-move-receiver.js?v=16',
   './manifest.webmanifest', './vendor/zxing-browser.min.js',
   './vendor/firebase/firebase-app-compat.js', './vendor/firebase/firebase-auth-compat.js',
   './vendor/firebase/firebase-firestore-compat.js'

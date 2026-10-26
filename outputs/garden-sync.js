@@ -267,9 +267,9 @@ export class GardenSync {
 
 // IndexedDB is independent of the legacy localStorage quota. The fallback is
 // only used when IndexedDB itself is unavailable, not as a cloud-save claim.
-export function createDeviceStore({ indexedDB = globalThis.indexedDB, storage } = {}) {
+export function createDeviceStore({ indexedDB = globalThis.indexedDB, storage, key = 'current' } = {}) {
   if (storage === undefined) { try { storage = globalThis.localStorage; } catch { storage = null; } }
-  const fallbackKey = 'brittanys-garden-cloud-v1';
+  const fallbackKey = key === 'current' ? 'brittanys-garden-cloud-v1' : `brittanys-garden-cloud-v1:${key}`;
   let opening;
   const open = () => opening ||= new Promise((resolve, reject) => {
     if (!indexedDB) return reject(new Error('Device database unavailable'));
@@ -283,7 +283,7 @@ export function createDeviceStore({ indexedDB = globalThis.indexedDB, storage } 
     const db = await open();
     return new Promise((resolve, reject) => {
       const tx = db.transaction('garden', mode);
-      const request = mode === 'readonly' ? tx.objectStore('garden').get('current') : tx.objectStore('garden').put(value, 'current');
+      const request = mode === 'readonly' ? tx.objectStore('garden').get(key) : tx.objectStore('garden').put(value, key);
       tx.oncomplete = () => resolve(mode === 'readonly' ? request.result : undefined);
       tx.onerror = tx.onabort = () => reject(new Error('Device save could not finish'));
     });

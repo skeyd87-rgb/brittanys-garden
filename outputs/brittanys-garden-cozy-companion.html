@@ -670,6 +670,12 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .readiness-actions .task-btn { width: auto; margin-top: 0; }
 .storage-warning { background: #fff0dc; border-color: #b57528; }
 .storage-warning p { color: #643f13; }
+.cloud-card { border-color: #9cb28a; }
+.cloud-card h2 { color: #355d2c; }
+.cloud-card .readiness-actions { margin-top: 8px; }
+.cloud-locked .screen, .cloud-locked .rail, .cloud-locked #storage-status, .cloud-locked .scanner-panel { display: none !important; }
+.cloud-locked .main { margin: 0; }
+.cloud-locked .content-col { max-width: 680px; margin: 0 auto; }
 .advanced-settings { margin-top: 16px; }
 .advanced-settings summary { cursor: pointer; font-size: 14px; padding: 12px 0; }
 .care-calendar { grid-column: 1 / -1; background: #fffdf7; border-radius: 20px; padding: 16px; }
@@ -687,7 +693,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 600px) { .readiness-card { padding: 16px; } .readiness-actions .task-btn { flex: 1 1 140px; } }
 </style>
 </head>
-<body>
+<body class="cloud-locked">
 <div class="app">
 
   <!-- RAIL -->
@@ -725,6 +731,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   <!-- MAIN -->
   <main class="main">
     <div class="content-col">
+      <section id="cloud-status" class="readiness-card cloud-card" aria-label="Private cloud saving">
+        <h2 id="cloud-title">Your private garden</h2>
+        <p id="cloud-message" role="status" aria-live="polite">Connecting to secure saving. Existing device data stays protected.</p>
+        <div class="readiness-actions" id="cloud-actions"><button class="task-btn task-btn-primary" type="button" data-action="cloud-sign-in">Continue with Google</button></div>
+        <div id="cloud-choices"></div>
+      </section>
       <div id="storage-status" class="readiness-card storage-warning hidden" role="alert" aria-live="assertive"></div>
 
       <!-- TODAY -->
@@ -999,7 +1011,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
         </div>
         <div class="setup-card">
           <div class="setup-card-title">Keep your garden safe</div>
-          <p class="field-help">Your garden is saved in this browser on this device. A downloaded backup is your portable copy for another phone, browser, or garden address. Keep using the same app link.</p>
+          <p class="field-help">Your signed-in garden saves automatically to its private cloud database. Open this same app link on another device and sign in to sync. A device copy keeps care available offline. Downloads below are optional extra backups, not your daily save step.</p>
           <p class="field-help" id="save-status" role="status"></p>
           <div class="readiness-actions">
             <button class="task-btn task-btn-primary" type="button" data-action="export-backup">Download garden backup</button>
@@ -1011,6 +1023,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
           <div id="backup-preview" class="hidden" aria-live="polite"></div>
           <p class="field-help" id="backup-status" role="status"></p>
           <div id="archived-plants"></div>
+          <div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="preview-cloud-recovery">Review the other saved copy</button></div>
         </div>
         <div class="setup-card">
           <div class="setup-card-title">Brittany's phone check</div>
@@ -1019,7 +1032,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
           <label class="phone-check"><input type="checkbox" data-phone-check="camera">A real seed packet scans, or front/back photos work; manual entry also works.</label>
           <label class="phone-check"><input type="checkbox" data-phone-check="offline">After opening once online, airplane mode still lets me reopen and log care; reconnecting keeps it.</label>
           <label class="phone-check"><input type="checkbox" data-phone-check="reminder">My optional Calendar reminder alerts at the time I chose, or I prefer no reminder.</label>
-          <label class="phone-check"><input type="checkbox" data-phone-check="backup">I downloaded a backup and checked its preview without replacing my garden.</label>
+          <label class="phone-check"><input type="checkbox" data-phone-check="backup">After signing in, I saw Saved to cloud and confirmed the same plants on another device.</label>
           <div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="start-trial">Start seven-day trial</button></div>
           <p class="field-help" id="trial-status" role="status"></p>
         </div>
@@ -1027,7 +1040,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
           <div class="offline-icon">📿</div>
           <div>
             <div class="offline-title">Works offline</div>
-            <div class="offline-sub" id="offline-status">Open once online to save an offline copy. Your garden lives on this device; use a downloaded backup to move it. Weather, seed lookup, and AI need internet.</div>
+            <div class="offline-sub" id="offline-status">Open and sign in once online to prepare this device. Offline changes stay on the device and sync after reconnecting. Wait for Saved to cloud before switching devices. Weather, seed lookup, and AI need internet.</div>
           </div>
         </div>
       </div>
@@ -1091,8 +1104,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 </div>
 
 <script src="vendor/zxing-browser.min.js"></script>
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script type="module">
 import { BACKUP_FORMAT, MAX_BACKUP_BYTES, parseGardenSnapshot, readGardenSnapshot, writeGardenSnapshot, gardenStreak, buildDailyReminder } from './garden-reliability.js';
+import { initializeGardenCloud } from './garden-cloud.js';
 // ============================
 // DATA
 // ============================
@@ -1163,6 +1180,9 @@ let lastBackupAt = '';
 let pendingBackup = null;
 let journalLimit = 100;
 let weatherRequestId = 0;
+let cloud = null;
+let cloudView = { phase: 'loading', signedIn: false };
+let localReadInfo = {};
 
 function hydrateState() {
   // Loading never writes or removes a saved record. Recoverable errors must not
@@ -1177,6 +1197,11 @@ function hydrateState() {
   storageDirty = false;
   storageMessage = result.warning || '';
   const saved = result.data;
+  localReadInfo = { blocked: !!result.blocked || (!result.data && !!result.warning) };
+  try {
+    localReadInfo.original = localStorage.getItem(storageKey) || '';
+    localReadInfo.backup = localStorage.getItem(`${storageKey}:backup`) || '';
+  } catch { /* Cloud storage is independent of legacy localStorage availability. */ }
   if (saved) {
     if (saved.settings && typeof saved.settings === 'object') state.settings = { ...state.settings, ...saved.settings };
     if (Array.isArray(saved.plants)) state.plants = saved.plants;
@@ -1213,14 +1238,23 @@ function gardenSnapshot() {
 }
 
 function saveState(options = {}) {
+  const snapshot = gardenSnapshot();
   let result;
-  try { result = writeGardenSnapshot(localStorage, storageKey, gardenSnapshot(), { blocked: storageWriteBlocked, ...options }); }
+  try { result = writeGardenSnapshot(localStorage, storageKey, snapshot, { blocked: storageWriteBlocked, ...options }); }
   catch { result = { ok: false, message: 'Device storage is unavailable. Keep this tab open and download a backup.' }; }
   storageDirty = !result.ok;
   storageMessage = result.message;
   if (result.ok) {
     storageWriteBlocked = false;
     lastSavedAt = new Date().toISOString();
+  }
+  if (cloud) {
+    cloudView = { ...cloudView, phase: navigator.onLine === false ? 'offline' : 'saving', pending: true };
+    void cloud.submit(snapshot, { recovered: !!options.allowReplace }).catch(() => {
+      cloudView = { ...cloudView, phase: 'error', message: 'Cloud saving could not finish. Keep this app open and tap Retry sync.' };
+      renderCloudStatus();
+    });
+    renderCloudStatus();
   }
   renderStorageStatus();
   return result.ok;
@@ -1229,11 +1263,67 @@ function saveState(options = {}) {
 function renderStorageStatus() {
   const banner = document.getElementById('storage-status');
   if (banner) {
-    banner.classList.toggle('hidden', !storageMessage);
-    banner.innerHTML = storageMessage ? `<h2>Your garden needs a save check</h2><p>${escapeHtml(storageMessage)}</p><div class="readiness-actions"><button class="task-btn task-btn-outline" type="button" data-action="export-backup">Download backup</button><button class="task-btn task-btn-outline" type="button" data-screen="settings">Open recovery options</button></div>` : '';
+    const cloudSafe = cloudView.signedIn && cloudView.phase === 'saved' && !cloudView.pending;
+    banner.classList.toggle('hidden', !storageMessage || cloudSafe);
+    banner.innerHTML = storageMessage && !cloudSafe ? `<h2>Your device copy needs attention</h2><p>${escapeHtml(storageMessage)}</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="cloud-retry">Retry cloud sync</button><button class="task-btn task-btn-outline" type="button" data-action="retry-save">Retry device save</button><button class="task-btn task-btn-outline" type="button" data-screen="settings">Recovery options</button></div>` : '';
   }
   const status = document.getElementById('save-status');
   if (status) status.textContent = storageDirty || storageWriteBlocked ? 'Not safely saved yet. Use the recovery options below.' : lastSavedAt ? `Saved on this device: ${new Date(lastSavedAt).toLocaleString()}. ${lastBackupAt ? `Last downloaded backup: ${new Date(lastBackupAt).toLocaleString()}.` : 'No downloaded backup yet.'}` : 'Ready to save your first plant.';
+}
+
+function renderCloudStatus() {
+  const { phase, signedIn, message, pending, durable, conflict } = cloudView;
+  const labels = {
+    loading: ['Connecting to your garden', 'Checking the private cloud copy. No empty garden will replace an existing one.'],
+    'signed-out': ['Your private garden', 'Sign in with Steven’s or Brittany’s approved Google account. Existing data on this device is kept for safe migration.'],
+    'signing-in': ['Opening Google sign-in', 'Choose your approved account, then return to this garden.'],
+    denied: ['Choose an approved account', 'Only Steven and Brittany can open this garden.'],
+    ready: ['Cloud saving is ready', 'Add your first plant. Changes will save automatically.'],
+    saving: ['Saving to cloud…', 'Keep the app open until this says Saved to cloud.'],
+    saved: ['Saved to cloud', `Your garden is up to date across signed-in devices.${durable === false ? ' This device could not keep an offline copy; reconnect before reopening.' : ' An offline device copy is ready too.'}`],
+    offline: ['Offline', durable ? (pending ? 'Changes are saved on this device and will sync after reconnecting. Do not switch devices until Saved to cloud appears.' : 'Showing this device’s saved copy. Cloud updates resume after reconnecting.') : 'Device saving is unavailable. Keep this app open and reconnect before closing it.'],
+    conflict: ['Choose your saved garden', 'The cloud and this device have different copies. Both are protected until you choose.'],
+    'remote-change': ['Another device saved changes', 'Finish or cancel the open form, then the latest cloud copy can load.'],
+    recovery: ['Recover your device garden', 'The original device record is protected. Open Setup and restore its last good copy before syncing it.'],
+    error: ['Saving needs attention', 'Reconnect, then tap Retry sync. Your saved copies have not been replaced.']
+  };
+  const [title, description] = labels[phase] || labels.loading;
+  document.getElementById('cloud-title').textContent = title;
+  document.getElementById('cloud-message').textContent = message || description;
+  document.getElementById('cloud-actions').innerHTML = signedIn
+    ? `<button class="task-btn task-btn-outline" type="button" data-action="cloud-retry">Retry sync</button><button class="task-btn task-btn-outline" type="button" data-action="cloud-sign-out">Sign out</button>`
+    : `<button class="task-btn task-btn-primary" type="button" data-action="cloud-sign-in">Continue with Google</button><button class="task-btn task-btn-outline" type="button" data-action="cloud-reload">Reload app</button>`;
+  if (signedIn && phase === 'recovery') document.getElementById('cloud-actions').innerHTML += `<button class="task-btn task-btn-outline" type="button" data-screen="settings">Open recovery options</button><button class="task-btn task-btn-outline" type="button" data-action="save-displayed-garden">Use the garden shown here</button>`;
+  const choices = document.getElementById('cloud-choices');
+  if (signedIn && conflict) {
+    const local = cloud?.engine?.record?.snapshot;
+    choices.innerHTML = `<p>This device: ${local?.plants.length || 0} plants, ${local?.journal.length || 0} journal entries. Cloud: ${conflict.snapshot?.plants.length || 0} plants, ${conflict.snapshot?.journal.length || 0} journal entries. The other copy will remain available in Setup.</p><div class="readiness-actions"><button class="task-btn task-btn-primary" type="button" data-action="use-cloud-garden">Use cloud garden</button><button class="task-btn task-btn-outline" type="button" data-action="use-device-garden">Save this device’s garden instead</button><button class="task-btn task-btn-outline" type="button" data-action="export-backup">Download this device’s copy</button></div>`;
+  } else choices.innerHTML = '';
+  renderStorageStatus();
+}
+
+function applyCloudSnapshot(saved) {
+  const previousLocation = `${state.settings.latitude},${state.settings.longitude}`;
+  state.settings = { ...state.settings, ...saved.settings };
+  state.plants = saved.plants;
+  state.archivedPlants = saved.archivedPlants;
+  state.journal = saved.journal;
+  state.doneDate = saved.doneDate || '';
+  state.doneToday = saved.doneToday || {};
+  lastSavedAt = saved.savedAt || lastSavedAt;
+  state.plants.forEach(normalizePlantCare);
+  refreshDay();
+  // Never overwrite a protected unreadable legacy record. The independent
+  // device database and the cloud remain usable while it is retained.
+  if (!storageWriteBlocked) {
+    const result = writeGardenSnapshot(localStorage, storageKey, saved);
+    storageMessage = result.message;
+    storageDirty = !result.ok;
+  }
+  syncSettingsControls();
+  if (state.selId && !state.plants.some(plant => plant.id === state.selId)) { state.selId = null; state.scr = 'today'; }
+  navigate(state.scr);
+  if (previousLocation !== `${state.settings.latitude},${state.settings.longitude}`) fetchWeather();
 }
 
 function refreshDay() {
@@ -1295,16 +1385,26 @@ function previewBackup(raw, source = 'file') {
   document.getElementById('backup-status').textContent = 'Preview only. Your garden has not changed.';
 }
 
-function restoreBackup() {
+async function restoreBackup() {
   if (!pendingBackup) return;
   // Commit the validated replacement before replacing the in-memory garden.
   let result;
   try { result = writeGardenSnapshot(localStorage, storageKey, { ...pendingBackup, savedAt: new Date().toISOString() }, { allowReplace: true }); }
   catch { result = { ok: false, message: 'Storage is unavailable. The current garden has not been replaced.' }; }
-  if (!result.ok) { document.getElementById('backup-status').textContent = result.message; return; }
+  if (!result.ok) {
+    // A full/unavailable legacy store must not block a reviewed restore into
+    // the independent device database. Keep the original legacy bytes intact.
+    if (!cloud || !await cloud.submit(pendingBackup, { recovered: true })) {
+      document.getElementById('backup-status').textContent = result.message;
+      return;
+    }
+    applyCloudSnapshot(pendingBackup);
+  } else {
+    hydrateState();
+    if (cloud) void cloud.submit(gardenSnapshot(), { recovered: true });
+  }
   pendingBackup = null;
   document.getElementById('backup-preview').classList.add('hidden');
-  hydrateState();
   syncSettingsControls();
   renderSetup();
   renderToday();
@@ -3284,6 +3384,25 @@ document.addEventListener('click', event => {
   if (!action) return;
 
   if (action === 'export-backup') return exportBackup();
+  if (action === 'cloud-sign-in') return cloud?.signIn();
+  if (action === 'cloud-sign-out') return cloud?.signOut();
+  if (action === 'cloud-retry') return cloud?.retry();
+  if (action === 'cloud-reload') return location.reload();
+  if (action === 'save-displayed-garden') {
+    if (confirm(`Save the garden shown here (${state.plants.length} plants) as your cloud copy? The unreadable original device record will remain protected for recovery.`)) return cloud?.submit(gardenSnapshot(), { recovered: true });
+    return;
+  }
+  if (action === 'use-cloud-garden') { closePlantForm(); return cloud?.resolve('cloud'); }
+  if (action === 'use-device-garden') {
+    if (confirm('Replace the cloud garden with the device copy shown here? The other copy will be kept in Setup for recovery.')) return cloud?.resolve('device');
+    return;
+  }
+  if (action === 'preview-cloud-recovery') {
+    const copy = cloud?.recovery();
+    if (copy) previewBackup(JSON.stringify(copy), 'cloud');
+    else document.getElementById('backup-status').textContent = 'There is no other saved copy to review yet. Nothing has changed.';
+    return;
+  }
   if (action === 'confirm-restore') return restoreBackup();
   if (action === 'cancel-restore') {
     pendingBackup = null;
@@ -3447,8 +3566,18 @@ syncSettingsControls();
 renderStorageStatus();
 navigate('today');
 fetchWeather();
+document.body.classList.add('cloud-locked');
+cloud = initializeGardenCloud({
+  getSnapshot: () => ({ ...gardenSnapshot(), savedAt: lastSavedAt || '' }),
+  applySnapshot: applyCloudSnapshot,
+  localInfo: localReadInfo,
+  isEditing: () => !document.getElementById('plant-form').classList.contains('hidden'),
+  onAuth: allowed => { document.body.classList.toggle('cloud-locked', !allowed); },
+  onStatus: view => { cloudView = view; renderCloudStatus(); }
+});
 
 function refreshAfterResume() {
+  cloud?.engine?.resume();
   const changed = refreshDay();
   if (changed) {
     const render = { today: renderToday, board: renderBoard, detail: renderDetail, planters: renderPlanters, journal: renderJournal, settings: renderSetup }[state.scr];

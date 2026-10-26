@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function allowed() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['skeyd87@gmail.com', 'britfowler10@gmail.com'];
+    }
+    function valid() {
+      return request.resource.data.keys().hasAll(['payload', 'version', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['payload', 'version', 'updatedAt', 'updatedBy'])
+        && request.resource.data.payload is string
+        && request.resource.data.payload.size() <= 900000
+        && request.resource.data.version is int
+        && request.resource.data.version > 0
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+    match /gardens/brittany {
+      allow get: if allowed();
+      allow create: if allowed() && valid() && request.resource.data.version == 1;
+      allow update: if allowed() && valid()
+        && request.resource.data.version == resource.data.version + 1;
+      allow delete, list: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

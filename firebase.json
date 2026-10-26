@@ -1,0 +1,28 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "firebase-auth-host",
+    "appId": "1:452061824986:web:e90aa3f0f0a832bd2f62e3",
+    "headers": [{ "source": "**", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }]
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Brittany's Garden",
+        "supportEmail": "skeyd87@gmail.com",
+        "authorizedRedirectUris": [
+          "https://brittanys-garden.vercel.app/__/auth/handler",
+          "https://brittanys-garden-skeyd87.firebaseapp.com/__/auth/handler"
+        ]
+      }
+    }
+  },
+  "emulators": {
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "firestore": { "host": "127.0.0.1", "port": 8085 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
+  }
+}

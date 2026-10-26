@@ -1,7 +1,10 @@
-const CACHE_NAME = 'brittanys-garden-v14';
+const CACHE_NAME = 'brittanys-garden-v15';
 const CORE_ASSETS = [
   './', './index.html', './brittanys-garden-cozy-companion.html',
-  './garden-reliability.js', './manifest.webmanifest', './vendor/zxing-browser.min.js'
+  './garden-reliability.js', './garden-sync.js', './garden-cloud.js',
+  './manifest.webmanifest', './vendor/zxing-browser.min.js',
+  './vendor/firebase/firebase-app-compat.js', './vendor/firebase/firebase-auth-compat.js',
+  './vendor/firebase/firebase-firestore-compat.js'
 ];
 const PHOTO_ASSETS = ['./assets/tomato.png', './assets/basil.png', './assets/pepper.png', './assets/lettuce.png'];
 
@@ -26,7 +29,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/__/')) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     if (event.request.mode === 'navigate' || event.request.destination === 'document') {

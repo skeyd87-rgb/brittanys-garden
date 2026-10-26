@@ -8,3 +8,10 @@ design-qa.md
 outputs/brittanys-garden-prototype.html
 test/
 scripts/
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+firebase.json
+firestore.rules
+.firebaserc
+firebase-auth-host/

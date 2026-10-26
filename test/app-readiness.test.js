@@ -40,7 +40,7 @@ function app(saved = fixture()) {
     Blob, URL, navigator: { userAgent: 'Test' }
   });
   const html = fs.readFileSync(new URL('../outputs/brittanys-garden-cozy-companion.html', import.meta.url), 'utf8');
-  const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*?;\s*$/m, '');
+  const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*?;\s*$/gm, '');
   vm.runInContext(source.slice(0, source.indexOf("document.addEventListener('click'")), context);
   vm.runInContext("state.scr = 'diagnostic'; showToast = () => {};", context);
   return { storage, elements, run: code => vm.runInContext(code, context), result: code => JSON.parse(JSON.stringify(vm.runInContext(code, context))), advance: value => { now = value; } };

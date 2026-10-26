@@ -26,7 +26,7 @@ The current build is a static mobile web app that can be added to a phone home s
 - Garden Journal
 - Editable setup fields
 - In-app How To section
-- Local saved data and generated plant assets
+- Private Google sign-in and automatic cloud saving, plus an offline device copy
 - Home-screen manifest
 - Offline cache
 - Independent, dated water/feed/trim/harvest completion with correct next-day rollover
@@ -41,9 +41,25 @@ The current build is a static mobile web app that can be added to a phone home s
 
 ## Saving and Recovery
 
+### Private cloud saving
+
+Garden uses its own Firebase project, `brittanys-garden-skeyd87`, not Books' project or data. On October 25, 2026, project creation succeeded after the earlier quota block. Google sign-in was enabled and the default Firestore database was created in `us-east1` on the free tier with deletion protection. Billing is disabled. The existing Vercel AI service and its separate AI budget are unchanged.
+
+Open the canonical [Garden link](https://brittanys-garden.vercel.app/) and choose Continue with Google. Only the two verified household accounts listed in `firestore.rules` can read or write `gardens/brittany`; collection listing, other document paths, and deletion are denied. Signed-out and unapproved accounts do not see the private garden UI. A remembered authorized sign-in can reopen the device copy offline. Signing out hides the data but intentionally retains device recovery records; this is not encryption or a shared-computer secure-erasure feature.
+
+The `Saved to cloud` indicator means a server read or transaction has confirmed the saved garden. `Saving` is not a success claim. Offline edits are queued in IndexedDB and retried on reconnection, focus, or the visible-app retry interval. If IndexedDB is unavailable, a separately verified localStorage fallback is attempted. If neither device store works, the app warns to keep it open; successful online cloud saves still work. `garden-sync.js` owns the tested sync engine, and `garden-cloud.js` adapts the Firebase browser SDK and sign-in UI callbacks.
+
+The cloud document stores a validated JSON snapshot, a version counter, server timestamp, and authenticated writer UID. A transaction checks the previous version before replacing it. This deliberately prevents silent last-writer-wins data loss. Simultaneous/offline edits that meet another device's newer version require a visible choice. The other copy is retained in device recovery storage before an explicit replacement; Setup can preview it without changing anything. An open plant form is not discarded by incoming snapshots.
+
+On first sign-in, a valid old device garden migrates automatically only when the cloud is empty. A fresh empty device loads an existing cloud garden without uploading a blank one. Two different existing gardens show counts and a choice. Unreadable original device records are retained, not treated as empty data. They can be recovered from a good copy, or explicitly replaced with the displayed garden after confirmation. Keep the original phone link and do not clear site data during migration. Legacy GitHub Pages and other origins have separate browser storage; the canonical Vercel address is the supported cloud/PWA origin.
+
+Cloud snapshots are capped at 890,000 UTF-8 bytes, below Firestore's 1 MiB document limit. Oversized gardens are rejected with a visible warning and no truncation. This is one private household garden, not a public multi-user service. No paid backup/PITR service or server-side reminder system has been enabled.
+
+### Legacy and optional file recovery
+
 The existing `brittanys-garden-mobile-v3` storage key is preserved. Loading never writes or deletes the saved record. Saves rotate a validated previous copy into `:backup`; a failed write leaves the old record intact and displays a persistent warning. If the main record is unreadable, the last good copy is shown with saving paused until an explicit restore.
 
-Setup downloads a versioned JSON backup and previews an imported file before replacing anything. Invalid files, unsupported formats, duplicate plant IDs, unsafe fields, and files larger than 4 MB are rejected. Restoring a file does not opt into an external AI helper address. Downloaded backups include all journal entries, active plants, archived plants, schedules, and settings. A backup is a file transfer, not automatic cloud sync. Another browser, phone, or origin starts with separate device data.
+Setup can still download an optional versioned JSON backup and preview an imported file before replacing anything. Invalid files, unsupported formats, duplicate plant IDs, unsafe fields, and files larger than 4 MB are rejected. Restoring a file does not opt into an external AI helper address. Downloaded backups include all journal entries, active plants, archived plants, schedules, and settings. Normal cross-device use now signs into the cloud instead of transferring files. A reviewed restore can use the independent device database when the legacy localStorage write fails.
 
 ## Daily Reminder
 
@@ -60,6 +76,8 @@ UPCitemdb's free catalog tier is limited to 100 requests per day and 6 lookups p
 AI advice runs in `api/garden-advice.js` through Vercel AI Gateway. Deployed Vercel Functions use an automatically supplied OIDC credential, so no AI API key is exposed in browser code. The endpoints apply origin checks, bounded inputs and outputs, timeouts, and best-effort per-instance request limits. On October 22, 2026, a $5 monthly AI Gateway budget was configured and read back for the `brittanys-garden` project. This meters OIDC requests from this project. Vercel budgets are soft limits: the request that crosses the limit completes. Other apps and hosting usage are outside that AI budget.
 
 ## Vercel Deployment
+
+Firebase setup is tracked in `.firebaserc`, `firebase.json`, and `firestore.rules`. Always target `brittanys-garden-skeyd87` explicitly for Firebase deployment. The tiny Firebase Hosting directory only provisions the sign-in helper's reserved configuration; it is not a second hosted Garden app. Vercel transparently proxies `/__/auth/*` and `/__/firebase/init.json` to that Firebase origin. The primary Vercel host is also the Firebase `authDomain`, authorized domain, and Google OAuth redirect host. This follows Firebase's first-party proxy approach for Safari/installed-PWA redirect storage. Do not replace the proxy with an HTTP redirect or point it at Books.
 
 The repository is connected to the `brittanys-garden` Vercel project. The app uses `/api/garden-advice` automatically on Vercel, and the GitHub Pages build calls the same private service. Set `ALLOWED_ORIGINS` only when adding another frontend origin.
 
@@ -84,13 +102,15 @@ Weather uses Open-Meteo's forecast API with the latitude and longitude selected 
 
 Run `npm test` for the persistence, migration, care scheduling, backup, Calendar, AI, and seed helper checks. The October 22 readiness pass also exercises 390px mobile and 1440px desktop views, duplicate-tap prevention, next-day care, archive/restore, undo, backup transfer to a fresh browser, malformed imports, full-device save failures and retry, offline reloads, AI failure/review behavior, camera-denied fallback, and photo review/apply with controlled service responses.
 
+The October 25 cloud-save pass has 65 passing Node tests and 14 browser scenarios on 390px mobile/1440px desktop. Browser coverage uses the real vendored Firebase SDK against local Auth/Firestore emulators, including the test-provider sign-in button, two approved accounts on separate device profiles, migration, live sync, offline reopen/edit/restart/reconnect, open-form protection, conflicting legacy choices, recovery preview, sign-out privacy, an unapproved account, and a failing legacy store. Rules reject signed-out/unapproved reads plus listing, unrelated paths, deletion, stale versions, forged writers, and oversized writes. The local emulator is not a production-data migration or proof of real-phone Google OAuth acceptance.
+
 The remaining physical acceptance is deliberately recorded as unchecked in Setup. On Brittany's phone:
 
 1. Open the same published link and add it to the home screen.
 2. Add three real plants and review their initial care plans against the packet and growing conditions.
 3. Try a real seed packet scan and front/back photos, including the manual fallback.
 4. Open online once, then use airplane mode to reopen and log care. Reconnect and check that it remains saved.
-5. Download a backup and inspect its preview. Confirm the optional Calendar reminder actually alerts, or choose no reminder.
+5. Sign in on both devices, wait for Saved to cloud, and confirm the same real plants appear. Confirm the optional Calendar reminder actually alerts, or choose no reminder. File backups are optional.
 6. Start the seven-day trial in Setup. Review next-day task rollover, ease of daily use, and any reported problems before calling the handoff complete.
 
 ## Local Preview
@@ -102,3 +122,5 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:7432/`. The server supports the Calendar endpoint and the same local AI routes; AI calls need local credentials to run. Automated browser tests use isolated test profiles and controlled responses for error paths, not Brittany's garden data.
+
+For local cloud tests, start the Auth/Firestore emulators using `firebase emulators:start --only auth,firestore --project brittanys-garden-skeyd87` (Java 21 or newer is required for Firestore), then open `/outputs/brittanys-garden-cozy-companion.html?emulators=1` on loopback. The emulator switch is ignored on every published/non-loopback host. Never use production records for test fixtures. Browser test accounts and test plants are emulator-only.

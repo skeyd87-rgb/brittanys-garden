@@ -27,3 +27,9 @@ node_modules/
 !.env.example
 
 .vercel
+
+# Firebase local diagnostics and emulator state
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+ui-debug*.log
